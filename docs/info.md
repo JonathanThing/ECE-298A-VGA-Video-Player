@@ -17,7 +17,7 @@ VGA video player
 
 Explain how to use your project
 
-TBD
+To be implemented
 
 ## External hardware
 
