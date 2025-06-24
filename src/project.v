@@ -20,6 +20,18 @@ module tt_um_jonathan_thing_vga (
   assign uio_out = 0;
   assign uio_oe  = 0;
 
+  // qspi qspi_inst();
+
+  // data_buffer buffer1();
+  // data_buffer buffer2();
+  // data_buffer buffer3();
+
+  // video video_inst();
+
+  // vga_timing vga_timing_inst ();
+
+  // pwm pwm_inst();
+
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, ui_in[7:5], uio_in[7:6], 1'b0};
 endmodule

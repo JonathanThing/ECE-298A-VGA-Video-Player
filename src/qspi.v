@@ -6,8 +6,9 @@ module qspi(
     
     output wire spi_clk,
     output wire spi_do,
+    output wire spi_hold_n,
     input wire [3:0] spi_di,
-    output wire io_direction,
+    output wire [3:0] io_direction,
     output wire cs_n,
 
     input wire shift_data,

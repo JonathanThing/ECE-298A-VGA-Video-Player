@@ -1,3 +1,6 @@
+/*
+Generates PWM signal given 8 bit sample value.
+*/
 module pwm (
     input clk,
     input rst_n,
