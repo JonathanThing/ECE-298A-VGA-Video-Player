@@ -74,6 +74,6 @@ end
 assign get_next = sig_next;
 assign colour_out = colour;
 
-wire _unused = &{next_line}
+wire _unused = &{next_line};
 
 endmodule
