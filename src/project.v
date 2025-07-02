@@ -84,7 +84,7 @@ module tt_um_jonathan_thing_vga (
     .clk(clk),
     .rst_n(rst_n),
 
-    .data_ready(),
+    .data_ready(1'b0),
     .data(buffer_data_3),
     .next_frame(vga_next_frame),
     .next_line(vga_next_line),

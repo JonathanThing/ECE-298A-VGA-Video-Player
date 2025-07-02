@@ -47,10 +47,9 @@ reg [1:0] h_state;
 reg [9:0] v_counter;
 reg [9:0] h_counter;
 
-reg next_line;
-
 reg vsync_reg;
 reg hsync_reg;
+reg next_row;
 
 // Logic Section
 always @(posedge clk) begin
@@ -61,7 +60,7 @@ always @(posedge clk) begin
         v_state <= V_ACTIVE;
         h_state <= H_ACTIVE;
 
-        next_line <= '0;
+        next_row <= '0;
     end
 
     else begin
@@ -70,7 +69,7 @@ always @(posedge clk) begin
             h_state <= (h_counter < (H_ACTIVE_COUNT - 1)) ? H_ACTIVE : H_FP;
 
             hsync_reg <= 1;
-            next_line <= 0;
+            next_row <= 0;
         end
 
         if(h_state == H_FP) begin
@@ -93,11 +92,11 @@ always @(posedge clk) begin
 
             hsync_reg <= 1;
 
-            next_line <= (h_counter == (H_BP_COUNT - 2)) ? 1 : 0;
+            next_row <= (h_counter == (H_BP_COUNT - 2)) ? 1 : 0;
         end
 
         // only edit vertical states if next line requested
-        if(next_line) begin
+        if(next_row) begin
             if(v_state == V_ACTIVE) begin
                 // only increment vertical counter if next line requested
                 // if will exceed active region, reset the counter
@@ -151,5 +150,5 @@ assign x_pos = (h_state == H_ACTIVE) ? h_counter : '0;
 assign y_pos = (v_state == V_ACTIVE) ? v_counter : '0;
 
 assign next_frame = v_counter == (V_BP_COUNT - 1);
-assign next_line = h_counter == (H_BP_COUNT - 1);
+assign next_line = next_row;
 endmodule
