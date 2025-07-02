@@ -6,14 +6,17 @@ module vga_unit (
 
     input [8:0] colour_in, // rrrgggbbb
     
-    output [9:0] x_pos,
-    output [9:0] y_pos,
+    output [9:0] x_pos, // debugging
+    output [9:0] y_pos, // debugging
 
     output wire vsync,
     output wire hsync,
 
-    output [8:0] colour_out,
-    output blank
+    output [8:0] colour_out, // rrrgggbbb
+    output blank,
+
+    output next_frame,
+    output next_line
 );
 
 // Macros
@@ -142,8 +145,11 @@ end
 assign colour_out = (v_state == V_ACTIVE) ? ((h_state == H_ACTIVE) ? colour_in : '0) : '0;
 assign vsync = vsync_reg;
 assign hsync = hsync_reg;
-assign blank = vsync_reg ? (hsync_reg ? 1 : 0) : 0
+assign blank = (v_state == V_FP || v_state == V_PULSE || v_state == V_BP) ? 1 : ((h_state == H_FP || h_state == H_PULSE || h_state == H_BP) ? 1 : 0)
 
 assign x_pos = (h_state == H_ACTIVE) ? h_counter : '0;
 assign y_pos = (v_state == V_ACTIVE) ? v_counter : '0;
+
+assign next_frame = v_counter == (V_BP_COUNT - 1);
+assign next_line = h_counter == (H_BP_COUNT - 1);
 endmodule

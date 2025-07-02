@@ -6,7 +6,6 @@ module qspi(
     
     output spi_clk,
     output spi_di,
-    output spi_do,
     output spi_hold_n,
     input [3:0] spi_inputs,
     output [3:0] io_direction,
@@ -36,10 +35,12 @@ always @(posedge clk) begin
     if(!rst_n) begin
         fsm_state <= STATE_START;
         shift_count <= '0;
+        io_direction <= 4'b0000;
     end
     else begin
         // startup sequence: pass opcode/mode
         if (fsm_state == STATE_START) begin
+            io_direction <= 4'b0111
             case(shift_count[2:0])
                 // pass in the code 6Bh (0110 1011)
                 3'b000: spi_di_out <= 0;
@@ -62,6 +63,7 @@ always @(posedge clk) begin
         end
         // startup sequence: wait 32 dummy cycles
         else if (fsm_state == STATE_DUMMY) begin
+            io_direction <= 4'b0101;
             if(shift_count == 5'd31) begin 
                 fsm_state <= STATE_RUN;
                 shift_count <= '0;
@@ -73,9 +75,22 @@ always @(posedge clk) begin
 
         // should take a total of 40 cycles to get to this point since enabling CS
         else if(fsm_state == STATE_RUN) begin
-            // we take 20 bits of data, so we expect it should take 5 cycles to read 1 instruction
-            miso <= spi_inputs;
-            data_out <= {data_out[15:0], miso};
+            if(shift_count < 5) begin
+                io_direction <= 4'b0101;
+                // we take 20 bits of data, so we expect it should take 5 cycles to read 1 instruction
+                miso <= spi_inputs;
+                data_out <= {data_out[15:0], miso};
+                shift_count <= shift_count + 1;
+            end
+            else begin
+                if(shift_data) begin
+                    shift_count <= '0;
+                end
+                else begin
+                    // hold
+                    io_direction <= 4'b1101;
+                end
+            end
         end
     end 
 end
@@ -83,6 +98,6 @@ end
 assign cs_n = (fsm_state == STATE_IDLE);
 assign spi_clk = !clk;
 assign spi_di = (fsm_state == STATE_START) ? spi_di_out : 0;    // exclusively used to drive the mode select
-assign spi_hold_n = (fsm_state == STATE_START || fsm_state == STATE_IDLE) ? 1 : 1;
+assign spi_hold_n = (fsm_state == STATE_START || fsm_state == STATE_IDLE) ? 1 : ((fsm_state == STATE_RUN && shift_data) ? 1 : 0);
 
 endmodule

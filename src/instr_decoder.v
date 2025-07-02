@@ -71,4 +71,6 @@ always @(posedge clk) begin
     end
 end
 
+assign get_next = sig_next;
+
 endmodule
