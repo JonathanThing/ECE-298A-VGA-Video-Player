@@ -24,6 +24,7 @@ project:
     - "data_buffer.v"
     - "vga_unit.v"
     - "qspi.v"
+    - "instr_decoder.v"
 
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
