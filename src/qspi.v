@@ -33,13 +33,17 @@ reg [3:0] miso;
 
 always @(posedge clk) begin
     if(!rst_n) begin
-        fsm_state <= STATE_START;
+        fsm_state <= STATE_IDLE;
         shift_count <= '0;
         io_direction <= 4'b0000;
     end
     else begin
         // startup sequence: pass opcode/mode
-        if (fsm_state == STATE_START) begin
+        if (fsm_state == STATE_IDLE) begin
+            io_direction <= 4'b0111;
+            fsm_state == STATE_START;
+        end
+        else if (fsm_state == STATE_START) begin
             io_direction <= 4'b0111;
             case(shift_count[2:0])
                 // pass in the code 6Bh (0110 1011)
