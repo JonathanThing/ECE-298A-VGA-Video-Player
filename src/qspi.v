@@ -40,8 +40,10 @@ always @(posedge clk) begin
     else begin
         // startup sequence: pass opcode/mode
         if (fsm_state == STATE_IDLE) begin
-            io_direction <= 4'b0111;
-            fsm_state <= STATE_START;
+            if(shift_data) begin
+                io_direction <= 4'b0111;
+                fsm_state <= STATE_START;
+            end
         end
         else if (fsm_state == STATE_START) begin
             io_direction <= 4'b0111;
