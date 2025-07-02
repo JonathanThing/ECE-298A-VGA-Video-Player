@@ -41,8 +41,8 @@ localparam [9:0] H_PULSE_COUNT = 2;
 localparam [9:0] H_BP_COUNT = 33;   
 
 // Control
-reg [1:0] v_state
-reg [1:0] h_state
+reg [1:0] v_state;
+reg [1:0] h_state;
 
 reg [9:0] v_counter;
 reg [9:0] h_counter;
@@ -145,7 +145,7 @@ end
 assign colour_out = (v_state == V_ACTIVE) ? ((h_state == H_ACTIVE) ? colour_in : '0) : '0;
 assign vsync = vsync_reg;
 assign hsync = hsync_reg;
-assign blank = (v_state == V_FP || v_state == V_PULSE || v_state == V_BP) ? 1 : ((h_state == H_FP || h_state == H_PULSE || h_state == H_BP) ? 1 : 0)
+assign blank = (v_state == V_FP || v_state == V_PULSE || v_state == V_BP) ? 1 : ((h_state == H_FP || h_state == H_PULSE || h_state == H_BP) ? 1 : 0);
 
 assign x_pos = (h_state == H_ACTIVE) ? h_counter : '0;
 assign y_pos = (v_state == V_ACTIVE) ? v_counter : '0;

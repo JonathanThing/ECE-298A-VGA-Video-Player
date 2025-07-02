@@ -16,7 +16,7 @@ module video(
     output wire enable_vga,
 
     input wire data_ready,
-    output wire shift_data,
+    output wire shift_data
 );
     reg [19:0] data_reg;
     reg [9:0] pixel_counter;

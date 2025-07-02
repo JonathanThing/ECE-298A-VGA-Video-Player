@@ -9,10 +9,9 @@ module vga_timing(
     
     output wire hsync_pulse,
     output wire vsync_pulse,
-    output wire horizontal_blank,
-    output wire vertical_blank,
+    output wire hv_blank,
     output wire new_line,
-    output wire new_frame,
+    output wire new_frame
 );
     // 640x480 @ 60Hz
     localparam H_ACTIVE = 640;

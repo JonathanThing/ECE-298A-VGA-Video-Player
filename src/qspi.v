@@ -13,7 +13,7 @@ module qspi(
 
     input shift_data,
     output data_ready,
-    output [19:0] data_out,
+    output [19:0] data_out
 );
 
 /* STATE DEFINITIONS */
@@ -40,7 +40,7 @@ always @(posedge clk) begin
     else begin
         // startup sequence: pass opcode/mode
         if (fsm_state == STATE_START) begin
-            io_direction <= 4'b0111
+            io_direction <= 4'b0111;
             case(shift_count[2:0])
                 // pass in the code 6Bh (0110 1011)
                 3'b000: spi_di_out <= 0;

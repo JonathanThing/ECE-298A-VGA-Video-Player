@@ -12,7 +12,7 @@ reg [19:0] data_buffer;
 
 always @(posedge clk) begin
     if (!rst_n) begin
-        data_buffer <= 20b'0;
+        data_buffer <= 20'b0;
     end else if (shift_data) begin
         data_buffer <= data_in;
     end
