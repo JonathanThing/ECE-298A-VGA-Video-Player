@@ -8,7 +8,7 @@ module qspi(
     output spi_di,
     output spi_hold_n,
     input [3:0] spi_inputs,
-    output [3:0] io_direction,
+    output reg [3:0] io_direction,
     output cs_n,
 
     input shift_data,

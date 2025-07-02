@@ -27,6 +27,7 @@ module tt_um_jonathan_thing_vga (
   wire vga_blank;
   wire vga_next_frame;
   wire vga_next_line;
+  wire data_ready_wire;
 
   qspi qspi_inst(
     .clk(clk),
@@ -39,7 +40,7 @@ module tt_um_jonathan_thing_vga (
     .io_direction({uio_oe[7], uio_oe[4], uio_oe[3], uio_oe[2]}),
     .cs_n(uio_out[2]),
     .shift_data(next_data),
-    .data_ready(1'b0),
+    .data_ready(data_ready_wire),
     .data_out(spi_data)
 
   );
@@ -84,7 +85,7 @@ module tt_um_jonathan_thing_vga (
     .clk(clk),
     .rst_n(rst_n),
 
-    .data_ready(1'b0),
+    .data_ready(data_ready_wire),
     .data(buffer_data_3),
     .next_frame(vga_next_frame),
     .next_line(vga_next_line),
@@ -94,13 +95,16 @@ module tt_um_jonathan_thing_vga (
     .colour_out(colour_dec)
   );
 
+  wire [9:0] x_temp;
+  wire [9:0] y_temp;
+
   vga_unit vga_unit_inst(
     .clk(clk),
     .rst_n(rst_n),
     .enable(1'b0),
     .colour_in(colour_dec),
-    .x_pos('0),
-    .y_pos('0),
+    .x_pos(x_temp),
+    .y_pos(y_temp),
     .vsync(uio_out[1]),
     .hsync(uio_out[0]),
     .colour_out({uo_out[2:0], uo_out[5:3], uio_out[6], uo_out[7:6]}),

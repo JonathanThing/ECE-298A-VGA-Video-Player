@@ -72,5 +72,6 @@ always @(posedge clk) begin
 end
 
 assign get_next = sig_next;
+assign colour_out = colour;
 
 endmodule
