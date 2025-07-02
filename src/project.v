@@ -116,5 +116,5 @@ module tt_um_jonathan_thing_vga (
   // pwm pwm_inst();
 
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, ui_in[7:5], uio_in[7:6], 1'b0};
+  wire _unused = &{ena, ui_in[7:4], uio_in[6:4], uio_in[2:0], 1'b0, x_temp, y_temp};
 endmodule
