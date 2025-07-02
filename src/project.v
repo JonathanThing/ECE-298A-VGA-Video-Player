@@ -20,7 +20,7 @@ module tt_um_jonathan_thing_vga (
   assign uio_out = 0;
   assign uio_oe  = 0;
 
-  wire spi_data [19:0];
+  wire [19:0] spi_data;
   wire next_data;
 
   // vga
