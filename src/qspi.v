@@ -12,6 +12,7 @@ module qspi(
     output cs_n,
 
     input shift_data,
+    input stop_read,
     output data_ready,
     output [19:0] data_out
 );
@@ -94,6 +95,7 @@ always @(posedge clk) begin
                 end
                 else begin
                     // hold
+                    if
                     io_direction <= 4'b1101;
                 end
             end

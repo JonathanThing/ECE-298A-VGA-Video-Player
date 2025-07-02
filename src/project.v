@@ -29,6 +29,8 @@ module tt_um_jonathan_thing_vga (
   wire vga_next_line;
   wire data_ready_wire;
 
+  wire stop_sig;
+
   qspi qspi_inst(
     .clk(clk),
     .rst_n(rst_n),
@@ -40,6 +42,7 @@ module tt_um_jonathan_thing_vga (
     .io_direction({uio_oe[7], uio_oe[4], uio_oe[3], uio_oe[2]}),
     .cs_n(uio_out[2]),
     .shift_data(next_data),
+    .stop_read(stop_sig),
     .data_ready(data_ready_wire),
     .data_out(spi_data)
 
@@ -92,7 +95,8 @@ module tt_um_jonathan_thing_vga (
     .next_pixel(!vga_blank),
     
     .get_next(next_data),
-    .colour_out(colour_dec)
+    .colour_out(colour_dec),
+    .stop_signal(stop_sig)
   );
 
   wire [9:0] x_temp;

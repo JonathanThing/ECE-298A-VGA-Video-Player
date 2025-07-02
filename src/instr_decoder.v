@@ -11,7 +11,7 @@ module instr_decoder (
 
     output get_next,
     output [8:0] colour_out
-
+    output stop_signal
 
 );
 
@@ -20,6 +20,8 @@ reg [8:0] colour;
 
 reg start;
 reg sig_next;
+
+assign stop_signal = length == 11'h7ff;
 
 always @(posedge clk) begin
     if(!rst_n) begin
