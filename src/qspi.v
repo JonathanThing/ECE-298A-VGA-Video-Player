@@ -96,7 +96,7 @@ always @(posedge clk) begin
                 else begin
                     // hold
                     if(stop_read) begin
-                        fsm_state == STATE_IDLE;
+                        fsm_state <= STATE_IDLE;
                     end
                     io_direction <= 4'b1101;
                 end

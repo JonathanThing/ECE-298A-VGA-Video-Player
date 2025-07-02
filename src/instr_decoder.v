@@ -10,7 +10,7 @@ module instr_decoder (
     input next_pixel,
 
     output get_next,
-    output [8:0] colour_out
+    output [8:0] colour_out,
     output stop_signal
 
 );
