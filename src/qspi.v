@@ -41,10 +41,8 @@ always @(posedge clk) begin
     else begin
         // startup sequence: pass opcode/mode
         if (fsm_state == STATE_IDLE) begin
-            if(shift_data) begin
-                io_direction <= 4'b0111;
-                fsm_state <= STATE_START;
-            end
+            io_direction <= 4'b0111;
+            fsm_state <= STATE_START;
         end
         else if (fsm_state == STATE_START) begin
             io_direction <= 4'b0111;
@@ -105,7 +103,7 @@ always @(posedge clk) begin
     end 
 end
 
-assign cs_n = (fsm_state == STATE_IDLE) ? 1 : 0;
+assign cs_n = (fsm_state == STATE_IDLE || stop_read) ? 1 : 0;
 assign spi_clk = !clk;
 assign spi_di = (fsm_state == STATE_START) ? spi_di_out : 0;    // exclusively used to drive the mode select
 assign spi_hold_n = (fsm_state == STATE_START || fsm_state == STATE_IDLE) ? 1 : ((fsm_state == STATE_RUN && shift_data) ? 1 : 0);
