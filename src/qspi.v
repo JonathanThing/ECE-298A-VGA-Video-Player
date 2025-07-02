@@ -95,7 +95,7 @@ always @(posedge clk) begin
     end 
 end
 
-assign cs_n = (fsm_state == STATE_IDLE);
+assign cs_n = (fsm_state == STATE_IDLE) ? 1 : 0;
 assign spi_clk = !clk;
 assign spi_di = (fsm_state == STATE_START) ? spi_di_out : 0;    // exclusively used to drive the mode select
 assign spi_hold_n = (fsm_state == STATE_START || fsm_state == STATE_IDLE) ? 1 : ((fsm_state == STATE_RUN && shift_data) ? 1 : 0);
