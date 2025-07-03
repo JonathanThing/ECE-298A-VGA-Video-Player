@@ -34,6 +34,9 @@ module tt_um_jonathan_thing_vga (
     wire [19:0] spi_data;
     wire spi_active;
 
+    assign uio_oe[5] = 0;
+    assign uio_out[5] = 0;
+
     assign uio_oe[1:0] = 2'b11;
     assign uio_oe[6] = 1;
 

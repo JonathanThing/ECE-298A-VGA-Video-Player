@@ -63,7 +63,7 @@ module vga_module (
     assign pixel_req = display_area && rgb_valid;
     
     // Main VGA logic - single always block
-    always @(posedge clk or negedge rst_n) begin
+    always @(posedge clk) begin
         if (!rst_n) begin
             h_counter <= 10'b0;
             v_counter <= 10'b0;
