@@ -73,6 +73,9 @@ module tt_um_jonathan_thing_vga (
     wire [19:0] buf2_instr_unused;
     wire [3:0] buf3_data_unused;
     
+    // Simple read enable logic - just use inverted need_next_instr
+    assign spi_read_enable = !need_next_instr;
+    
     // SPI Flash Reader
     spi_flash_reader spi_reader (
         .clk(clk),
@@ -91,9 +94,6 @@ module tt_um_jonathan_thing_vga (
         .data_valid(spi_data_valid),
         .busy(spi_busy)
     );
-    
-    // Simple read enable logic - keep reading unless decoder needs to catch up
-    assign spi_read_enable = !need_next_instr || spi_data_valid;
     
     // Instruction Buffer Chain (4 buffers for proper pipeline)
     instruction_buffer buf0 (
@@ -164,14 +164,14 @@ module tt_um_jonathan_thing_vga (
         .display_active(display_active)
     );
     
-    // Output mapping
+    // Output mapping - pure combinational
     assign uo_out = {vga_blue[1], vga_blue[0], vga_green[2], vga_green[1], vga_green[0], vga_red[2], vga_red[1], vga_red[0]};
     
-    // Bidirectional output mapping
+    // Bidirectional output mapping - pure combinational
     assign uio_out = {spi_quad_out[3], vga_vsync, spi_cs_n, spi_quad_out[0], spi_clk, 1'b0, 1'b0, vga_hsync};
     assign uio_oe = {spi_quad_oe[3], 1'b1, 1'b1, spi_quad_oe[0], 1'b1, 1'b0, 1'b0, 1'b1}; // VSYNC, CS, SCLK, HSYNC as outputs
     
-    // Unused signals
+    // Unused signals - pure combinational
     wire _unused = &{ena, ui_in, uio_in[6:5], uio_in[1:0], display_active, spi_busy,
                      vga_blue[2], spi_quad_out[2:1], spi_quad_oe[2:1],
                      buf0_instr_unused, buf1_instr_unused, buf2_instr_unused, 
