@@ -36,14 +36,18 @@ module tt_um_jonathan_thing_vga (
     
     // SPI interface signals
     wire spi_cs_n, spi_clk;
-    wire [3:0] spi_quad_in, spi_quad_out, spi_quad_oe;
+    wire [3:0] spi_quad_in;
+    wire [3:0] spi_quad_out; 
+    wire [3:0] spi_quad_oe;
     
     // Map SPI quad pins to bidirectional IOs
     assign spi_quad_in = {uio_in[7], uio_in[3], uio_in[2], uio_in[4]}; // IO3, IO0, DO, SCLK as inputs for quad read
     
     // VGA output signals
     wire vga_hsync, vga_vsync;
-    wire [2:0] vga_red, vga_green, vga_blue;
+    wire [2:0] vga_red;
+    wire [2:0] vga_green;
+    wire [2:0] vga_blue;
     wire vga_pixel_clock, display_active;
     
     // SPI to buffer interface
@@ -52,9 +56,11 @@ module tt_um_jonathan_thing_vga (
     wire spi_read_enable;
     
     // Buffer chain signals
-    wire [3:0] buf0_data_out, buf1_data_out, buf2_data_out;
+    wire [3:0] buf0_data_out;
+    wire [3:0] buf1_data_out;
+    wire [3:0] buf2_data_out;
     wire buf0_shift_out, buf1_shift_out, buf2_shift_out, buf3_shift_out;
-    wire [19:0] current_instruction, prev_instruction1, prev_instruction2, prev_instruction3;
+    wire [19:0] prev_instruction3;
     
     // Decoder signals
     wire [8:0] pixel_color;
