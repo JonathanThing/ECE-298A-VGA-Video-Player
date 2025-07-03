@@ -49,7 +49,7 @@ module tt_um_jonathan_thing_vga (
     wire [2:0] vga_red;
     wire [2:0] vga_green; 
     wire [2:0] vga_blue;
-    wire vga_pixel_clock
+    wire vga_pixel_clock;
     wire display_active;
     
     // SPI to buffer interface
