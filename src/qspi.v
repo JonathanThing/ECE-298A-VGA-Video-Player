@@ -1,145 +1,181 @@
-module qspi(
-    input clk,
-    input rst_n,
+/*
+ * SPI Flash Reader Module for 6Bh Fast Read Quad Output
+ * Sequential Read Mode Only (Figure 21b)
+ * Continuous reading of 20-bit instructions from Winbond flash memory
+ * Verilog-2001 compatible - only uses always @(posedge clk)
+ */
 
-    input [1:0] spi_latency,
+module spi_flash_reader (
+    input  wire        clk,
+    input  wire        rst_n,
+    input  wire        start_sequence,  // Pulse to start sequential read mode
+    input  wire        read_enable,     // High to continuously read, low to pause
+    input  wire        end_sequence,    // Pulse to end sequential read and raise CS
     
-    output spi_clk,
-    output spi_di,
-    output spi_hold_n,
-    input [3:0] spi_inputs,
-    output reg [3:0] io_direction,
-    output cs_n,
-
-    input shift_data,
-    input stop_read,
-    output data_ready,
-    output [19:0] data_out
+    // SPI Interface (matching your pin mapping)
+    output reg         spi_cs_n,        // Chip select (active low)
+    output reg         spi_clk,         // SPI clock (1:1 with system clock)
+    input  wire [3:0]  spi_quad_in,     // Quad input data (IO0-IO3)
+    output reg [3:0]   spi_quad_out,    // Quad output data (unused in read mode)
+    output reg [3:0]   spi_quad_oe,     // Quad output enable (all inputs for read)
+    
+    // Data Interface
+    output reg [19:0]  instruction,     // 20-bit instruction output
+    output reg         data_valid,      // Data valid flag (pulses high for one cycle)
+    output reg         busy            // Module busy flag
 );
 
-/* STATE DEFINITIONS */
-localparam STATE_START = 0; // 00
-localparam STATE_DUMMY = 1; // 01
-localparam STATE_RUN = 2;   // 10
-localparam STATE_IDLE = 3;  // 11
-
-// Internal Controls
-reg [4:0] shift_count;
-reg [1:0] fsm_state;
-reg cs_n_reg;
-
-// Internal Registers
-reg spi_di_out;
-reg [19:0] data_out_reg;
-
-reg [3:0] miso;
-
-always @(posedge clk) begin
-    if(!rst_n) begin
-        fsm_state <= STATE_IDLE;
-        shift_count <= '0;
-        io_direction <= 4'b0000;
-        cs_n_reg <= 1'b1;  // CS inactive on reset
-        data_out_reg <= 20'b0;
-    end
-    else begin
-        // startup sequence: pass opcode/mode
-        if (fsm_state == STATE_IDLE) begin
-            cs_n_reg <= 1'b1;  // CS inactive in idle
-            if(shift_data && !stop_read) begin
-                io_direction <= 4'b0111;
-                fsm_state <= STATE_START;
-                cs_n_reg <= 1'b0;  // Activate CS when starting
-                shift_count <= '0;
-            end
-        end
-        else if (fsm_state == STATE_START) begin
-            cs_n_reg <= 1'b0;  // Keep CS active
-            io_direction <= 4'b0111;
-            case(shift_count[2:0])
-                // pass in the code 6Bh (0110 1011)
-                3'b000: spi_di_out <= 0;
-                3'b001: spi_di_out <= 1;
-                3'b010: spi_di_out <= 1;
-                3'b011: spi_di_out <= 0;
-                3'b100: spi_di_out <= 1;
-                3'b101: spi_di_out <= 0;
-                3'b110: spi_di_out <= 1;
-                3'b111: spi_di_out <= 1;           
-                default: spi_di_out <= 0;
+    // State machine states
+    localparam IDLE = 2'h0;
+    localparam INIT_DUMMY = 2'h1;       // Initial 32 dummy cycles
+    localparam CONTINUOUS_READ = 2'h2;   // Continuous reading mode
+    
+    reg [1:0] state, next_state;
+    
+    // Internal registers
+    reg [5:0] dummy_counter;    // Counts initial 32 dummy cycles
+    reg [2:0] bit_counter;      // Counts 5 quad cycles for 20 bits
+    reg [19:0] data_shift_reg;
+    reg sequential_active;      // Flag to indicate we're in sequential mode
+    reg spi_clk_int;           // Internal SPI clock
+    reg spi_clk_enable;        // Clock enable signal
+    
+    // All logic in single always block
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            // Reset all registers
+            state <= IDLE;
+            next_state <= IDLE;
+            spi_cs_n <= 1'b1;
+            spi_clk <= 1'b0;
+            spi_quad_out <= 4'h0;
+            spi_quad_oe <= 4'h0;
+            dummy_counter <= 6'd0;
+            bit_counter <= 3'd0;
+            data_shift_reg <= 20'h0;
+            instruction <= 20'h0;
+            data_valid <= 1'b0;
+            busy <= 1'b0;
+            sequential_active <= 1'b0;
+            spi_clk_int <= 1'b0;
+            spi_clk_enable <= 1'b0;
+        end else begin
+            // Toggle internal SPI clock
+            spi_clk_int <= ~spi_clk_int;
+            
+            // Update state
+            state <= next_state;
+            
+            // Next state logic
+            case (state)
+                IDLE: begin
+                    if (start_sequence) next_state <= INIT_DUMMY;
+                    else next_state <= IDLE;
+                end
+                INIT_DUMMY: begin
+                    if (dummy_counter == 6'd31 && spi_clk_int == 1'b1) next_state <= CONTINUOUS_READ;
+                    else next_state <= INIT_DUMMY;
+                end
+                CONTINUOUS_READ: begin
+                    if (end_sequence) next_state <= IDLE;
+                    else next_state <= CONTINUOUS_READ;
+                end
+                default: begin
+                    next_state <= IDLE;
+                end
             endcase
             
-            if(shift_count[2:0] == 3'b111) begin 
-                fsm_state <= STATE_DUMMY;
-                shift_count <= '0;
-            end
-            else begin
-                shift_count <= shift_count + 1;
-            end
-            
-            // Check for stop condition
-            if(stop_read) begin
-                fsm_state <= STATE_IDLE;
-                cs_n_reg <= 1'b1;
-            end
-        end
-        // startup sequence: wait 32 dummy cycles
-        else if (fsm_state == STATE_DUMMY) begin
-            cs_n_reg <= 1'b0;  // Keep CS active
-            io_direction <= 4'b0101;
-            if(shift_count == 5'd31) begin 
-                fsm_state <= STATE_RUN;
-                shift_count <= '0;
-            end
-            else begin
-                shift_count <= shift_count + 1;
+            // SPI clock enable logic
+            if (state == INIT_DUMMY || (state == CONTINUOUS_READ && read_enable)) begin
+                spi_clk_enable <= 1'b1;
+            end else begin
+                spi_clk_enable <= 1'b0;
             end
             
-            // Check for stop condition
-            if(stop_read) begin
-                fsm_state <= STATE_IDLE;
-                cs_n_reg <= 1'b1;
+            // SPI clock output
+            if (spi_clk_enable) begin
+                spi_clk <= spi_clk_int;
+            end else begin
+                spi_clk <= 1'b0;
             end
-        end
+            
+            // Main control logic
+            case (state)
+                IDLE: begin
+                    data_valid <= 1'b0;
 
-        // should take a total of 40 cycles to get to this point since enabling CS
-        else if(fsm_state == STATE_RUN) begin
-            cs_n_reg <= 1'b0;  // Keep CS active during run
-            
-            if(shift_count < 5) begin
-                io_direction <= 4'b0101;
-                // we take 20 bits of data, so we expect it should take 5 cycles to read 1 instruction
-                miso <= spi_inputs;
-                data_out_reg <= {data_out_reg[15:0], miso};
-                shift_count <= shift_count + 1;
-            end
-            else begin
-                if(shift_data && !stop_read) begin
-                    shift_count <= '0;
+                    // Startup sequence
+                    if (start_sequence) begin
+                        spi_cs_n <= 1'b0;
+                        sequential_active <= 1'b1;
+                        spi_quad_oe <= 4'h0;  // All inputs
+                        busy <= 1'b1;
+                        dummy_counter <= 6'd0;
+                    end 
+                    // End reading
+                    else if (end_sequence) begin
+                        spi_cs_n <= 1'b1;
+                        sequential_active <= 1'b0;
+                        busy <= 1'b0;
+                    end 
+                    // Idle state
+                    else begin
+                        if (!sequential_active) begin
+                            spi_cs_n <= 1'b1;
+                        end
+                        busy <= 1'b0;
+                    end
                 end
-                else begin
-                    // hold
-                    io_direction <= 4'b1101;
+                
+                INIT_DUMMY: begin
+                    // Initial 32 dummy cycles to start sequential read
+                    if (spi_clk_int == 1'b1) begin  // Falling edge of SPI clock
+                        if (dummy_counter == 6'd31) begin
+                            dummy_counter <= 6'd0;
+                            bit_counter <= 3'd0;
+                        end else begin
+                            dummy_counter <= dummy_counter + 1;
+                        end
+                    end
                 end
-            end
-            
-            // Check for stop condition - this can happen any time
-            if(stop_read) begin
-                fsm_state <= STATE_IDLE;
-                cs_n_reg <= 1'b1;
-            end
+                
+                CONTINUOUS_READ: begin
+                    data_valid <= 1'b0;  // Default to no new data
+                    
+                    if (read_enable) begin
+                        busy <= 1'b1;
+                        // Continuously read 20-bit instructions
+                        if (spi_clk_int == 1'b0) begin  // Rising edge of SPI clock
+                            // Capture 4 bits on each rising edge
+                            data_shift_reg <= {data_shift_reg[15:0], spi_quad_in};
+                        end else if (spi_clk_int == 1'b1) begin  // Falling edge of SPI clock
+                            // Increment counter on falling edge
+                            if (bit_counter == 3'd4) begin
+                                // Completed 5 quad cycles (20 bits)
+                                bit_counter <= 3'd0;
+                                instruction <= {data_shift_reg[15:0], spi_quad_in};
+                                data_valid <= 1'b1;  // Signal new data available
+                            end else begin
+                                bit_counter <= bit_counter + 1;
+                            end
+                        end
+                    end else begin
+                        busy <= 1'b0;
+                        // Keep bit_counter where it is when paused
+                    end
+                    
+                    if (end_sequence) begin
+                        spi_cs_n <= 1'b1;
+                        sequential_active <= 1'b0;
+                        busy <= 1'b0;
+                    end
+                end
+                
+                default: begin
+                    // Probably shouldn't ever get here idk
+                end
+            endcase
         end
-    end 
-end
-
-assign cs_n = cs_n_reg;
-assign spi_clk = !clk;
-assign spi_di = (fsm_state == STATE_START) ? spi_di_out : 1'b0;
-assign spi_hold_n = (fsm_state == STATE_START || fsm_state == STATE_IDLE) ? 1'b1 : 
-                    ((fsm_state == STATE_RUN && shift_data) ? 1'b1 : 1'b0);
-assign data_ready = (fsm_state == STATE_RUN && shift_count >= 5) ? 1'b1 : 1'b0;
-assign data_out = data_out_reg;
-
-wire _unused = &{spi_latency};
-
+    end
+    
 endmodule

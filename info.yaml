@@ -18,13 +18,10 @@ project:
   # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
   source_files:
     - "project.v"
-    - "vga_timing.v"
-    - "video.v"
-    - "pwm.v"
-    - "data_buffer.v"
-    - "vga_unit.v"
+    - "decode_instr.v"
     - "qspi.v"
-    - "instr_decoder.v"
+    - "spi_buffer.v"
+    - "vga_module.v"
 
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.

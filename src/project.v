@@ -5,6 +5,20 @@
 
 `default_nettype none
 
+/* 
+----- INPUT MAPPING -----
+  INPUT           OUTPUT      BIDIR
+0 SPI_Latency[0]  R[0]        HSYNC
+1 SPI_Latency[1]  R[1]        VSYNC
+2 IO1 (DO)        R[2]        nCS
+3 IO2             G[0]        IO0 (DI)
+4                 G[1]        SCLK
+5                 G[2]        PWM Audio
+6                 B[0]        B[2]
+7                 B[1]        IO3 (HOLD)
+
+*/
+
 module tt_um_jonathan_thing_vga (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
@@ -12,135 +26,139 @@ module tt_um_jonathan_thing_vga (
     output wire [7:0] uio_out,  // IOs: Output path
     output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
     input  wire       ena,      // always 1 when the design is powered, so you can ignore it
-    input  wire       clk,      // clock
+    input  wire       clk,      // clock (~25MHz pixel clock)
     input  wire       rst_n     // reset_n - low to reset
 );
 
-  wire [19:0] spi_data;
-  wire next_data;
-
-  // vga
-  wire vga_blank;
-  wire vga_next_frame;
-  wire vga_next_line;
-  wire data_ready_wire;
-
-  wire stop_sig;
-
-  // QSPI control signals
-  wire spi_clk_wire;
-  wire spi_di_wire;
-  wire spi_hold_n_wire;
-  wire cs_n_wire;
-  wire [3:0] io_direction_wire;
-
-  qspi qspi_inst(
-    .clk(clk),
-    .rst_n(rst_n),
-    .spi_latency(ui_in[1:0]),
-    .spi_clk(spi_clk_wire),
-    .spi_di(spi_di_wire),
-    .spi_hold_n(spi_hold_n_wire),
-    .spi_inputs({uio_in[7], ui_in[3], ui_in[2], uio_in[3]}),
-    .io_direction(io_direction_wire),
-    .cs_n(cs_n_wire),
-    .shift_data(next_data),
-    .stop_read(stop_sig),
-    .data_ready(data_ready_wire),
-    .data_out(spi_data)
-  );
-
-  wire [19:0] buffer_data_1;
-  wire [19:0] buffer_data_2;
-  wire [19:0] buffer_data_3;
-
-  data_buffer buffer1(
-    .clk(clk),
-    .rst_n(rst_n),
-    .data_in(spi_data),
-    .data_out(buffer_data_1),
-    .shift_data(next_data)
-  );
-
-  data_buffer buffer2(
-    .clk(clk),
-    .rst_n(rst_n),
-    .data_in(buffer_data_1),
-    .data_out(buffer_data_2),
-    .shift_data(next_data)
-  );
-
-  data_buffer buffer3(
-    .clk(clk),
-    .rst_n(rst_n),
-    .data_in(buffer_data_2),
-    .data_out(buffer_data_3),
-    .shift_data(next_data)
-  );
-
-  wire [8:0] colour_dec;
-
-  instr_decoder instr_decoder_inst(
-    .clk(clk),
-    .rst_n(rst_n),
-    .data_ready(data_ready_wire),
-    .data(buffer_data_3),
-    .next_frame(vga_next_frame),
-    .next_line(vga_next_line),
-    .next_pixel(!vga_blank),
-    .get_next(next_data),
-    .colour_out(colour_dec),
-    .stop_signal(stop_sig)
-  );
-
-  wire [9:0] x_temp;
-  wire [9:0] y_temp;
-
-  vga_unit vga_unit_inst(
-    .clk(clk),
-    .rst_n(rst_n),
-    .enable(1'b0),
-    .colour_in(colour_dec),
-    .x_pos(x_temp),
-    .y_pos(y_temp),
-    .vsync(vsync_wire),
-    .hsync(hsync_wire),
-    .colour_out(colour_wire),
-    .blank(vga_blank),
-    .next_frame(vga_next_frame),
-    .next_line(vga_next_line)
-  );
-
-  // VGA control signals
-  wire vsync_wire;
-  wire hsync_wire;
-  wire [8:0] colour_wire;
-
-  // Properly assign uio_out pins instead of assigning all to 0
-  assign uio_out[0] = hsync_wire;
-  assign uio_out[1] = vsync_wire;  
-  assign uio_out[2] = cs_n_wire;
-  assign uio_out[3] = spi_di_wire;
-  assign uio_out[4] = spi_clk_wire;
-  assign uio_out[5] = 1'b0; // unused
-  assign uio_out[6] = colour_wire[0]; // least significant bit of colour
-  assign uio_out[7] = spi_hold_n_wire;
-
-  // Properly assign uio_oe pins based on io_direction from QSPI
-  assign uio_oe[0] = 1'b1; // hsync output
-  assign uio_oe[1] = 1'b1; // vsync output
-  assign uio_oe[2] = io_direction_wire[0]; // cs_n
-  assign uio_oe[3] = io_direction_wire[1]; // spi_di
-  assign uio_oe[4] = io_direction_wire[2]; // spi_clk
-  assign uio_oe[5] = 1'b0; // unused, set as input
-  assign uio_oe[6] = 1'b1; // colour output
-  assign uio_oe[7] = io_direction_wire[3]; // spi_hold_n
-
-  // Assign the remaining colour bits to uo_out
-  assign uo_out[2:0] = colour_wire[2:0];   // RGB lower bits
-  assign uo_out[5:3] = colour_wire[5:3];   // RGB middle bits  
-  assign uo_out[7:6] = colour_wire[7:6];   // RGB upper bits
-
-  // List all unused inputs to prevent warnings
-  wire _unused = &{ena, ui_in[7:4], uio_in[6:4], uio_in[2:0], 1'b0, x_temp, y_temp};
+    // Control signals - automatically start sequence
+    wire start_seq = rst_n;     // Start when coming out of reset
+    wire end_seq = 1'b0;        // Never end sequence
+    
+    // SPI interface signals
+    wire spi_cs_n, spi_clk;
+    wire [3:0] spi_quad_in, spi_quad_out, spi_quad_oe;
+    
+    // Map SPI quad pins to bidirectional IOs
+    assign spi_quad_in = {uio_in[7], uio_in[3], uio_in[2], uio_in[4]}; // IO3, IO0, DO, SCLK as inputs for quad read
+    
+    // VGA output signals
+    wire vga_hsync, vga_vsync;
+    wire [2:0] vga_red, vga_green, vga_blue;
+    wire vga_pixel_clock, display_active;
+    
+    // SPI to buffer interface
+    wire [19:0] spi_instruction;
+    wire spi_data_valid, spi_busy;
+    wire spi_read_enable;
+    
+    // Buffer chain signals
+    wire [3:0] buf0_data_out, buf1_data_out, buf2_data_out;
+    wire buf0_shift_out, buf1_shift_out, buf2_shift_out, buf3_shift_out;
+    wire [19:0] current_instruction, prev_instruction1, prev_instruction2, prev_instruction3;
+    
+    // Decoder signals
+    wire [8:0] pixel_color;
+    wire need_next_instr, color_valid;
+    
+    // SPI Flash Reader
+    spi_flash_reader spi_reader (
+        .clk(clk),
+        .rst_n(rst_n),
+        .start_sequence(start_seq),
+        .read_enable(spi_read_enable),
+        .end_sequence(end_seq),
+        
+        .spi_cs_n(spi_cs_n),
+        .spi_clk(spi_clk),
+        .spi_quad_in(spi_quad_in),
+        .spi_quad_out(spi_quad_out),
+        .spi_quad_oe(spi_quad_oe),
+        
+        .instruction(spi_instruction),
+        .data_valid(spi_data_valid),
+        .busy(spi_busy)
+    );
+    
+    // Simple read enable logic - keep reading unless decoder needs to catch up
+    assign spi_read_enable = !need_next_instr || spi_data_valid;
+    
+    // Instruction Buffer Chain (4 buffers for proper pipeline)
+    instruction_buffer buf0 (
+        .clk(clk),
+        .rst_n(rst_n),
+        .data_in(spi_quad_in),          // Direct from SPI quad input
+        .shift_enable(spi_data_valid),   // Shift when SPI has new data
+        .data_out(buf0_data_out),
+        .shift_out(buf0_shift_out),
+        .instruction(current_instruction)
+    );
+    
+    instruction_buffer buf1 (
+        .clk(clk),
+        .rst_n(rst_n),
+        .data_in(buf0_data_out),
+        .shift_enable(buf0_shift_out),
+        .data_out(buf1_data_out),
+        .shift_out(buf1_shift_out),
+        .instruction(prev_instruction1)
+    );
+    
+    instruction_buffer buf2 (
+        .clk(clk),
+        .rst_n(rst_n),
+        .data_in(buf1_data_out),
+        .shift_enable(buf1_shift_out),
+        .data_out(buf2_data_out),
+        .shift_out(buf2_shift_out),
+        .instruction(prev_instruction2)
+    );
+    
+    instruction_buffer buf3 (
+        .clk(clk),
+        .rst_n(rst_n),
+        .data_in(buf2_data_out),
+        .shift_enable(buf2_shift_out),
+        .data_out(),                    // Not needed since decoder takes full instruction
+        .shift_out(),                   // Not needed since decoder takes full instruction  
+        .instruction(prev_instruction3)
+    );
+    
+    // Instruction Decoder
+    decode_instr decoder (
+        .clk(clk),                      // Use main clock as pixel clock
+        .rst_n(rst_n),
+        .instruction(prev_instruction3), // Take full 20-bit instruction from buf3
+        .instruction_valid(buf3_shift_out), // New instruction when data completes in buf3
+        .pixel_clock(vga_pixel_clock),
+        .color_out(pixel_color),
+        .need_next_instr(need_next_instr),
+        .color_valid(color_valid)
+    );
+    
+    // VGA Module
+    vga_module vga (
+        .clk(clk),                      // Use main clock as pixel clock
+        .rst_n(rst_n),
+        .color_in(pixel_color),
+        .color_valid(color_valid),
+        
+        .hsync(vga_hsync),
+        .vsync(vga_vsync),
+        .red(vga_red),
+        .green(vga_green),
+        .blue(vga_blue),
+        .pixel_clock(vga_pixel_clock),
+        .display_active(display_active)
+    );
+    
+    // Output mapping
+    assign uo_out = {vga_blue[1], vga_blue[0], vga_green[2], vga_green[1], vga_green[0], vga_red[2], vga_red[1], vga_red[0]};
+    
+    // Bidirectional output mapping
+    assign uio_out = {spi_quad_out[3], vga_vsync, spi_cs_n, spi_quad_out[0], spi_clk, 1'b0, 1'b0, vga_hsync};
+    assign uio_oe = {spi_quad_oe[3], 1'b1, 1'b1, spi_quad_oe[0], 1'b1, 1'b0, 1'b0, 1'b1}; // VSYNC, CS, SCLK, HSYNC as outputs
+    
+    // Unused signals
+    wire _unused = &{ena, ui_in, uio_in[6:5], uio_in[1:0], display_active, prev_instruction1, prev_instruction2, prev_instruction3, spi_busy};
+    
 endmodule
