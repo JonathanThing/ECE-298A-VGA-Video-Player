@@ -1,4 +1,7 @@
-/*
+    // Decoder signals
+    wire [8:0] pixel_color;
+    wire need_next_instr;
+    wire color_valid;/*
  * Copyright (c) 2024 Your Name
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,44 +39,29 @@ module tt_um_jonathan_thing_vga (
     
     // SPI interface signals
     wire spi_cs_n, spi_clk;
-    wire [3:0] spi_quad_in; 
-    wire [3:0] spi_quad_out;
-    wire [3:0] spi_quad_oe;
+    wire [3:0] spi_quad_in, spi_quad_out, spi_quad_oe;
     
     // Map SPI quad pins to bidirectional IOs
     assign spi_quad_in = {uio_in[7], uio_in[3], uio_in[2], uio_in[4]}; // IO3, IO0, DO, SCLK as inputs for quad read
     
     // VGA output signals
-    wire vga_hsync;
-    wire vga_vsync;
-    wire [2:0] vga_red;
-    wire [2:0] vga_green; 
-    wire [2:0] vga_blue;
-    wire vga_pixel_clock;
-    wire display_active;
+    wire vga_hsync, vga_vsync;
+    wire [2:0] vga_red, vga_green, vga_blue;
+    wire vga_pixel_clock, display_active;
     
-    // SPI to buffer interface
-    wire [19:0] spi_instruction;
-    wire spi_data_valid, spi_busy;
+    // SPI to buffer interface - removed unused spi_instruction
+    wire spi_data_valid;
+    wire spi_busy;
     wire spi_read_enable;
     
     // Buffer chain signals
-    wire [3:0] buf0_data_out;
-    wire [3:0] buf1_data_out;
-    wire [3:0] buf2_data_out;
-    wire buf0_shift_out;
-    wire buf1_shift_out; 
-    wire buf2_shift_out; 
-    wire buf3_shift_out;
-    wire [19:0] current_instruction;
-    wire [19:0] prev_instruction1;
-    wire [19:0] prev_instruction2; 
-    wire [19:0] prev_instruction3;
+    wire [3:0] buf0_data_out, buf1_data_out, buf2_data_out;
+    wire buf0_shift_out, buf1_shift_out, buf2_shift_out, buf3_shift_out;
+    wire [19:0] current_instruction, prev_instruction1, prev_instruction2, prev_instruction3;
     
     // Decoder signals
     wire [8:0] pixel_color;
-    wire need_next_instr;
-    wire color_valid;
+    wire need_next_instr, color_valid;
     
     // SPI Flash Reader
     spi_flash_reader spi_reader (
@@ -89,7 +77,7 @@ module tt_um_jonathan_thing_vga (
         .spi_quad_out(spi_quad_out),
         .spi_quad_oe(spi_quad_oe),
         
-        .instruction(spi_instruction),
+        .instruction(spi_instr_unused),      // Connect to dummy wire
         .data_valid(spi_data_valid),
         .busy(spi_busy)
     );
@@ -105,7 +93,7 @@ module tt_um_jonathan_thing_vga (
         .shift_enable(spi_data_valid),   // Shift when SPI has new data
         .data_out(buf0_data_out),
         .shift_out(buf0_shift_out),
-        .instruction(current_instruction)
+        .instruction(buf0_instr_unused)  // Connect to dummy wire
     );
     
     instruction_buffer buf1 (
@@ -115,7 +103,7 @@ module tt_um_jonathan_thing_vga (
         .shift_enable(buf0_shift_out),
         .data_out(buf1_data_out),
         .shift_out(buf1_shift_out),
-        .instruction(prev_instruction1)
+        .instruction(buf1_instr_unused)  // Connect to dummy wire
     );
     
     instruction_buffer buf2 (
@@ -125,19 +113,16 @@ module tt_um_jonathan_thing_vga (
         .shift_enable(buf1_shift_out),
         .data_out(buf2_data_out),
         .shift_out(buf2_shift_out),
-        .instruction(prev_instruction2)
+        .instruction(buf2_instr_unused)  // Connect to dummy wire
     );
     
-    wire [3:0] data_out_unused;
-    wire shift_out_unused;
-
     instruction_buffer buf3 (
         .clk(clk),
         .rst_n(rst_n),
         .data_in(buf2_data_out),
         .shift_enable(buf2_shift_out),
-        .data_out(data_out_unused),                    // Not needed since decoder takes full instruction
-        .shift_out(shift_out_unused),                   // Not needed since decoder takes full instruction  
+        .data_out(buf3_data_unused),     // Connect to dummy wire
+        .shift_out(buf3_shift_out),      // Connect for decoder
         .instruction(prev_instruction3)
     );
     
@@ -177,6 +162,9 @@ module tt_um_jonathan_thing_vga (
     assign uio_oe = {spi_quad_oe[3], 1'b1, 1'b1, spi_quad_oe[0], 1'b1, 1'b0, 1'b0, 1'b1}; // VSYNC, CS, SCLK, HSYNC as outputs
     
     // Unused signals
-    wire _unused = &{ena, ui_in, uio_in[6:5], uio_in[1:0], display_active, prev_instruction1, prev_instruction2, prev_instruction3, spi_busy, data_out_unused, shift_out_unused};
+    wire _unused = &{ena, ui_in, uio_in[6:5], uio_in[1:0], display_active, spi_busy,
+                     vga_blue[2], spi_quad_out[2:1], spi_quad_oe[2:1],
+                     buf0_instr_unused, buf1_instr_unused, buf2_instr_unused, 
+                     buf3_data_unused, spi_instr_unused};
     
 endmodule
