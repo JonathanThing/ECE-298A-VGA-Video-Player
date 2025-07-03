@@ -153,7 +153,7 @@ module spi_flash_reader (
                             if (bit_counter == 3'd4) begin
                                 // Completed 5 quad cycles (20 bits)
                                 bit_counter <= 3'd0;
-                                instruction <= {data_shift_reg[15:0], spi_quad_in};
+                                instruction <= data_shift_reg[19:0];
                                 data_valid <= 1'b1;  // Signal new data available
                             end else begin
                                 bit_counter <= bit_counter + 1;
