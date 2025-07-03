@@ -102,7 +102,7 @@ module tt_um_jonathan_thing_vga (
         .valid(data_3_ready)
     );
 
-    data_buffer buf2(
+    data_buffer buf3(
         .clk(clk),
         .rst_n(rst_n),
         .shift_en(spi_active),
