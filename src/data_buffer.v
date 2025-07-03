@@ -4,7 +4,7 @@
  * Provides valid signal when a complete instruction is ready
  */
 
-module instruction_buffer (
+module data_buffer (
     input  wire        clk,         // Clock
     input  wire        rst_n,       // Reset (active low)
     input  wire        shift_en,    // Enable shifting in new data
