@@ -36,7 +36,6 @@ module spi_flash_reader (
     reg [6:0] cycle_counter;    // Counts cycles (dummy + data)
     reg [2:0] bit_counter;      // Counts quad cycles for 20 bits
     reg [19:0] data_shift_reg;
-    reg sequential_active;      // Flag to indicate we're in sequential mode
     // Use inverted clock for SPI - much simpler!
     
     // Main logic
@@ -54,7 +53,6 @@ module spi_flash_reader (
             instruction <= 20'h0;
             data_valid <= 1'b0;
             busy <= 1'b0;
-            sequential_active <= 1'b0;
         end else begin
             // Default assignments
             data_valid <= 1'b0;
@@ -67,14 +65,12 @@ module spi_flash_reader (
                     if (start_sequence) begin
                         state <= INIT_DUMMY;
                         spi_cs_n <= 1'b0;
-                        sequential_active <= 1'b1;
                         spi_quad_oe <= 4'h0;  // All inputs
                         busy <= 1'b1;
                         cycle_counter <= 7'd0;
                         bit_counter <= 3'd0;
                     end else if (end_sequence) begin
                         spi_cs_n <= 1'b1;
-                        sequential_active <= 1'b0;
                     end
                 end
                 
@@ -94,7 +90,6 @@ module spi_flash_reader (
                     if (end_sequence) begin
                         state <= IDLE;
                         spi_cs_n <= 1'b1;
-                        sequential_active <= 1'b0;
                         busy <= 1'b0;
                         spi_clk <= 1'b0;
                     end else if (read_enable) begin
@@ -107,7 +102,7 @@ module spi_flash_reader (
                         
                         if (bit_counter == 3'd4) begin  // 5 quad cycles = 20 bits
                             bit_counter <= 3'd0;
-                            instruction <= {data_shift_reg[15:0], spi_quad_in};
+                            instruction <= data_shift_reg[19:0];
                             data_valid <= 1'b1;
                         end
                     end else begin
