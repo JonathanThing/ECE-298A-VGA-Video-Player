@@ -46,7 +46,7 @@ module tt_um_jonathan_thing_vga (
     wire [2:0] vga_red, vga_green, vga_blue;
     wire vga_pixel_clock, display_active;
     
-    // SPI to buffer interface - removed unused spi_instruction
+    // SPI to buffer interface
     wire spi_data_valid;
     wire spi_busy;
     wire spi_read_enable;
@@ -59,6 +59,13 @@ module tt_um_jonathan_thing_vga (
     // Decoder signals
     wire [8:0] pixel_color;
     wire need_next_instr, color_valid;
+
+    // unused wire
+    wire [19:0] spi_instr_unused;
+    wire [19:0] buf0_instr_unused;
+    wire [19:0] buf1_instr_unused;
+    wire [19:0] buf2_instr_unused;
+    wire [3:0] buf3_data_unused;
     
     // SPI Flash Reader
     spi_flash_reader spi_reader (
