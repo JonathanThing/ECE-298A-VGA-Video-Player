@@ -23,6 +23,8 @@ module data_buffer (
     // Output assignments
     assign instruction = shift_reg;
     assign valid = valid_reg;
+
+    wire _unused = &{data_in[15:0]};
     
     // Main logic
     always @(posedge clk) begin

@@ -43,6 +43,7 @@ module qspi_controller (
     reg        cs_n_reg;
     reg        di_reg;
     reg [3:0]  oe_sig;      // 1 for output; 0 for input
+    reg        hold_n_reg;
     
     wire [3:0] io_in_data;
     
@@ -50,7 +51,8 @@ module qspi_controller (
     assign spi_clk = !clk;
     assign spi_cs_n = cs_n_reg;
     assign spi_di = di_reg;
-    
+    assign spi_hold_n = hold_n_reg;
+
     // Quad data input (IO3, IO2, IO1/DO, IO0)
     assign io_in_data = {spi_io3, spi_io2, spi_io1, spi_io0};
     
@@ -74,6 +76,7 @@ module qspi_controller (
             cs_n_reg <= 1'b1;
             di_reg <= 1'b0;
             oe_sig <= 4'b0000;
+            hold_n_reg <= 0;
         end else begin
             case (state)
                 IDLE: begin
@@ -82,6 +85,7 @@ module qspi_controller (
                     bit_counter <= 8'b0;
                     valid_reg <= 1'b0;
                     di_reg <= 1'b0;
+                    hold_n_reg <= 1;
                     state <= SEND_CMD;
                 end
                 
@@ -135,6 +139,7 @@ module qspi_controller (
                 default: begin
                     state <= IDLE;
                     oe_sig <= 4'b1101;
+                    hold_n_reg <= 0;
                 end
             endcase
         end

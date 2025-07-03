@@ -27,7 +27,7 @@ module instruction_decoder (
     assign rgb_valid = rgb_valid_reg;
 
     // Main decoder logic - single always block
-    always @(posedge clk or negedge rst_n) begin
+    always @(posedge clk) begin
         if (!rst_n) begin
             run_length <= 11'b0;
             run_counter <= 11'b0;

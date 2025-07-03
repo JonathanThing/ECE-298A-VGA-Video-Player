@@ -145,6 +145,6 @@ module tt_um_jonathan_thing_vga (
     );
     
     // Unused signals
-    wire _unused = &{ui_in[7:4], ui_in[1:0], uio_in[6:4], uio_in[2:0], uio_oe[5], uio_out[5], uio_in[5]};
+    wire _unused = &{ena, ui_in[7:4], ui_in[1:0], uio_in[6:4], uio_in[2:0], uio_oe[5], uio_out[5], uio_in[5]};
     
 endmodule
