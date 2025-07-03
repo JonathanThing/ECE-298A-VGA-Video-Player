@@ -16,7 +16,7 @@ module qspi_controller (
     input  wire        spi_io0,    // IO0 (for quad read)
     input  wire        spi_io1,     // DO (data output from flash) - IO1
     input  wire        spi_io2,    // IO2
-    input  wire        spi_io3     // IO3/HOLD
+    input  wire        spi_io3,     // IO3/HOLD
     
     // Output interface
     output wire [19:0] instruction, // 20-bit instruction output
