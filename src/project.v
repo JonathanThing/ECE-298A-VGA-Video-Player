@@ -1,7 +1,4 @@
-    // Decoder signals
-    wire [8:0] pixel_color;
-    wire need_next_instr;
-    wire color_valid;/*
+/*
  * Copyright (c) 2024 Your Name
  * SPDX-License-Identifier: Apache-2.0
  */
