@@ -90,7 +90,7 @@ module qspi_controller (
                 end
                 
                 SEND_CMD: begin
-                    // Send 8-bit command (6Bh = 01100011) on DI, MSB first
+                    // Send 8-bit command (6Bh = 01101011) on DI, MSB first
                     case (bit_counter)
                         0: di_reg <= 1'b0;  // bit 7
                         1: di_reg <= 1'b1;  // bit 6

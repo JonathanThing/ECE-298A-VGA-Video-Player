@@ -54,8 +54,8 @@ module vga_module (
     assign green = green_reg;
     assign blue = blue_reg;
     
-    // Display area detection
-    assign h_display_area = (h_counter < H_DISPLAY);
+    // Determine if in display area
+    assign h_display_area = (h_counter < H_DISPLAY); 
     assign v_display_area = (v_counter < V_DISPLAY);
     assign display_area = h_display_area && v_display_area;
     
@@ -65,8 +65,8 @@ module vga_module (
     // Main VGA logic - single always block
     always @(posedge clk) begin
         if (!rst_n) begin
-            h_counter <= 10'b0;
-            v_counter <= 10'b0;
+            h_counter <= H_DISPLAY; // Start in blanking area to sync with the display
+            v_counter <= V_DISPLAY;
             hsync_reg <= 1'b1;
             vsync_reg <= 1'b1;
             red_reg <= 3'b0;
