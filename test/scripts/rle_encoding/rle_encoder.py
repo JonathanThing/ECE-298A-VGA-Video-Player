@@ -12,8 +12,20 @@ img = img.convert('RGB')
 run = 0
 colour = (-1, -1, -1) 
 
+# Data format 24 bits
+# [5 bit unused][10 bits run][3 bits red][3 bits green][3 bits blue]
+def write_rle_instruction(f, run_length, r, g, b):
+    r_3bit = (r >> 5) & 0x7
+    g_3bit = (g >> 5) & 0x7  
+    b_3bit = (g >> 5) & 0x7  
+
+    instruction = (run_length & 0x3FF) << 9 | (r_3bit << 6) | (g_3bit << 3) | (b_3bit)
+    print(f"Writing 0x{instruction:06X} for run {run_length} ({run_length:010b}) with colour {r_3bit} ({r_3bit:03b}), {g_3bit} ({g_3bit:03b}), {b_3bit} ({b_3bit:03b})")
+
+    f.write(instruction.to_bytes(3, byteorder='big'))
+
 with open("output.bin", "wb") as f:
-    for y in range(1):
+    for y in range(height):
         for x in range(width):
             r, g, b = img.getpixel((x, y))
             if colour == (-1, -1, -1):
@@ -23,13 +35,10 @@ with open("output.bin", "wb") as f:
                 run += 1
             else:
                 if run < 5:
-                    # Warn
+                    # Warn, may change if capabilities change
                     print(f"Run of {run} pixels at ({x}, {y}) with colour {colour} is too short")
                 
-                # Data format 20 bits
-                # [1 bit unused leave 0][10 bits run][3 bits red][3 bits green][3 bits blue]
-                f.write(bytes([(run & 0x3FF) | 0x80, (r & 0x07) << 5 | (g & 0x07) << 2 | (b & 0x07)]))
-                print(f"Run of {run} pixels at ({x}, {y}) with colour {colour}")
+                write_rle_instruction(f, run, r, g, b)
 
                 run = 1
                 colour = (r, g, b)
