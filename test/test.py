@@ -7,6 +7,12 @@ from cocotb.triggers import ClockCycles, RisingEdge, FallingEdge, Timer
 
 import scripts.qspi_sim as qspi_sim
 
+def set_4bit_io(dut, value):
+    dut.uio_in[3].value = (value >> 0) & 1  # IO_0
+    dut.ui_in[2].value  = (value >> 1) & 1  # IO_1
+    dut.ui_in[3].value  = (value >> 2) & 1  # IO_2
+    dut.uio_in[7].value = (value >> 3) & 1  # IO_3
+
 @cocotb.test()
 async def test_project(dut):
     dut._log.info("Start")
@@ -54,18 +60,18 @@ async def test_project(dut):
         if (i < 31):
             await FallingEdge(dut.clk)
 
-    await RisingEdge(dut.clk)
-    # # Update Data
-    # for i in range(2*8):
-    #     inputData = int(qspi_sim.clock_data())
-    #     print(f"{inputData:01X}", end="")
-    #     if (i%2 == 1):
-    #         print(" ", end="")
-    # print("")
+    await RisingEdge(dut.clk)  # Send the simulated flash IC Data
+    set_4bit_io(dut, int(qspi_sim.clock_data()))
 
-    await FallingEdge(dut.clk)
+    await FallingEdge(dut.clk) # Check if hold pin is pulled low
     outputEnable = dut.uio_oe[7].value
     assert outputEnable == 0, f"Expected output enable to be low at end of instruction, got {outputEnable}"
     print("QSPI instruction sent successfully")
 
+    for i in range(2*300-1): # Send 300 clocks
+        await RisingEdge(dut.clk)   
+        set_4bit_io(dut, int(qspi_sim.clock_data()))
+
     assert True
+
+
