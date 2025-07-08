@@ -17,9 +17,9 @@ module qspi_controller (
     input  wire        spi_io1,     // DO (data output from flash) - IO1
     input  wire        spi_io2,    // IO2
     input  wire        spi_io3,     // IO3/HOLD
-    
+
     // Output interface
-    output wire [19:0] instruction, // 20-bit instruction output
+    output wire [18:0] instruction,        // 19-bit data output
     output wire        spi_cs_oe,
     output wire        spi_di_oe,
     output wire        spi_sclk_oe,
@@ -38,7 +38,7 @@ module qspi_controller (
     // Internal signals
     reg [2:0]  state;
     reg [7:0]  bit_counter;
-    reg [19:0] instruction_reg;
+    reg [23:0] instruction_reg;
     reg        valid_reg;
     reg        cs_n_reg;
     reg        di_reg;
@@ -57,7 +57,7 @@ module qspi_controller (
     assign io_in_data = {spi_io3, spi_io2, spi_io1, spi_io0};
     
     // Output assignments
-    assign instruction = instruction_reg;
+    assign instruction = instruction_reg[18:0];
     assign valid = valid_reg;
     assign spi_cs_oe = oe_sig[0];
     assign spi_di_oe = oe_sig[1];
@@ -71,7 +71,7 @@ module qspi_controller (
         if (!rst_n) begin
             state <= IDLE;
             bit_counter <= 8'b0;
-            instruction_reg <= 20'b0;
+            instruction_reg <= 24'b0;
             valid_reg <= 1'b0;
             cs_n_reg <= 1'b1;
             di_reg <= 1'b0;
@@ -124,11 +124,11 @@ module qspi_controller (
                 READ_DATA: begin
                     oe_sig <= 4'b0101;
                     
-                    // Read 20 bits of data (5 cycles of 4 bits each)
-                    instruction_reg <= {instruction_reg[15:0], io_in_data};
+                    // Read 24 bits of data (6 cycles of 4 bits each)
+                    instruction_reg <= {instruction_reg[19:0], io_in_data};
                     bit_counter <= bit_counter + 1;
                     
-                    if (bit_counter == 5) begin  // 20 bits received (5 cycles)
+                    if (bit_counter == 6) begin  // 3 bytes received (6 cycles)
                         valid_reg <= 1'b1;
                         bit_counter <= 8'b0;
                         // Continue reading next instruction
