@@ -34,6 +34,8 @@ module tt_um_jonathan_thing_vga (
     wire [19:0] spi_data;
     wire spi_active;
 
+    wire decode_allow_shift;
+
     assign uio_oe[5] = 0;
     assign uio_out[5] = 0;
 
@@ -53,6 +55,8 @@ module tt_um_jonathan_thing_vga (
         .spi_io2(ui_in[3]),
         .spi_io3(uio_in[7]),
         
+        .allow_read(decode_allow_shift),
+
         .instruction(spi_data),
         .spi_cs_oe(uio_oe[2]),
         .spi_di_oe(uio_oe[3]),
@@ -72,10 +76,12 @@ module tt_um_jonathan_thing_vga (
     wire data_3_ready;
     wire data_4_ready;
 
+    reg enable_flash_read;
+
     data_buffer buf0(
         .clk(clk),
         .rst_n(rst_n),
-        .shift_en(spi_active),
+        .shift_en(enable_flash_read),
         
         .data_in(spi_data),
         .prev_empty(!spi_ready),
@@ -86,7 +92,7 @@ module tt_um_jonathan_thing_vga (
     data_buffer buf1(
         .clk(clk),
         .rst_n(rst_n),
-        .shift_en(spi_active),
+        .shift_en(enable_flash_read),
 
         .data_in(data_1),
         .prev_empty(!data_1_ready),
@@ -97,7 +103,7 @@ module tt_um_jonathan_thing_vga (
     data_buffer buf2(
         .clk(clk),
         .rst_n(rst_n),
-        .shift_en(spi_active),
+        .shift_en(enable_flash_read),
 
         .data_in(data_2),
         .prev_empty(!data_2_ready),
@@ -108,7 +114,7 @@ module tt_um_jonathan_thing_vga (
     data_buffer buf3(
         .clk(clk),
         .rst_n(rst_n),
-        .shift_en(spi_active),
+        .shift_en(enable_flash_read),
 
         .data_in(data_3),
         .prev_empty(!data_3_ready),
@@ -129,8 +135,11 @@ module tt_um_jonathan_thing_vga (
         .pixel_req(req_next_pix),
 
         .rgb_out(colour_in),
-        .rgb_valid(pixel_ready)
+        .rgb_valid(pixel_ready),
+        .cont_shift(decode_allow_shift)
     );
+
+    assign enable_flash_read = decode_allow_shift && spi_active;
 
     vga_module vga_inst(
         .clk(clk),

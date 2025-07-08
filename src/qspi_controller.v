@@ -17,6 +17,8 @@ module qspi_controller (
     input  wire        spi_io1,     // DO (data output from flash) - IO1
     input  wire        spi_io2,    // IO2
     input  wire        spi_io3,     // IO3/HOLD
+
+    input  wire        allow_read,
     
     // Output interface
     output wire [19:0] instruction, // 20-bit instruction output
@@ -44,6 +46,8 @@ module qspi_controller (
     reg        di_reg;
     reg [3:0]  oe_sig;      // 1 for output; 0 for input
     reg        hold_n_reg;
+
+    reg        hold_read;
     
     wire [3:0] io_in_data;
     
@@ -86,11 +90,12 @@ module qspi_controller (
                     valid_reg <= 1'b0;
                     di_reg <= 1'b0;
                     hold_n_reg <= 1;
+                    hold_read <= 0;
                     state <= SEND_CMD;
                 end
                 
                 SEND_CMD: begin
-                    // Send 8-bit command (6Bh = 01100011) on DI, MSB first
+                    // Send 8-bit command (6Bh = 01101011) on DI, MSB first
                     case (bit_counter)
                         0: di_reg <= 1'b0;  // bit 7
                         1: di_reg <= 1'b1;  // bit 6
@@ -104,7 +109,7 @@ module qspi_controller (
                     endcase
                     
                     bit_counter <= bit_counter + 1;
-                    if (bit_counter == 7) begin  // 8 bits sent in 8 cycles
+                    if (bit_counter == 8) begin  // 8 bits sent in 8 cycles
                         state <= DUMMY_CYCLES;
                         bit_counter <= 8'b0;
                         di_reg <= 1'b0;
@@ -114,7 +119,7 @@ module qspi_controller (
                 DUMMY_CYCLES: begin
                     // Wait for dummy cycles (32 dummy clocks as per datasheet)
                     bit_counter <= bit_counter + 1;
-                    if (bit_counter == 31) begin  // 32 dummy cycles
+                    if (bit_counter == 32) begin  // 32 dummy cycles
                         oe_sig <= 4'b0101;
                         state <= READ_DATA;
                         bit_counter <= 8'b0;
@@ -123,16 +128,29 @@ module qspi_controller (
                 
                 READ_DATA: begin
                     // Read 20 bits of data (5 cycles of 4 bits each)
-                    instruction_reg <= {instruction_reg[15:0], io_in_data};
-                    bit_counter <= bit_counter + 1;
-                    
-                    if (bit_counter == 4) begin  // 20 bits received (5 cycles)
-                        valid_reg <= 1'b1;
-                        bit_counter <= 8'b0;
-                        // Continue reading next instruction
-                        // In sequential mode, we just keep reading
-                    end else begin
-                        valid_reg <= 1'b0;
+                    if(hold_read) begin
+                        if(allow_read) begin
+                            hold_read <= 0;
+                        end
+                    end
+                    else begin
+                        instruction_reg <= {instruction_reg[15:0], io_in_data};
+                        bit_counter <= bit_counter + 1;
+                        
+                        if (bit_counter == 5) begin  // 20 bits received (5 cycles)
+                            valid_reg <= 1'b1;
+                            bit_counter <= 8'b0;
+                            // Continue reading next instruction
+                            // In sequential mode, we just keep reading
+                            if(!allow_read) begin
+                                hold_read <= 1;
+                                oe_sig <= {1'b0, oe_sig[2], oe_sig[1], oe_sig[0]};
+                                hold_n_reg <= 0; 
+                            end
+
+                        end else begin
+                            valid_reg <= 1'b0;
+                        end
                     end
                 end
                 
