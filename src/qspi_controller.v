@@ -105,24 +105,25 @@ module qspi_controller (
                     endcase
                     
                     bit_counter <= bit_counter + 1;
-                    if (bit_counter == 8) begin  // 8 bits sent in 8 cycles
+                    if (bit_counter == 7) begin  // 8 bits
                         state <= DUMMY_CYCLES;
                         bit_counter <= 8'b0;
-                        di_reg <= 1'b0;
                     end
                 end
                 
                 DUMMY_CYCLES: begin
                     // Wait for dummy cycles (32 dummy clocks as per datasheet)
+                    di_reg <= 1'b0;  // Keep DI low during dummy cycles
                     bit_counter <= bit_counter + 1;
-                    if (bit_counter == 32) begin  // 32 dummy cycles
-                        oe_sig <= 4'b0101;
+                    if (bit_counter == 31) begin  // 32 dummy cycles
                         state <= READ_DATA;
                         bit_counter <= 8'b0;
                     end
                 end
                 
                 READ_DATA: begin
+                    oe_sig <= 4'b0101;
+                    
                     // Read 20 bits of data (5 cycles of 4 bits each)
                     instruction_reg <= {instruction_reg[15:0], io_in_data};
                     bit_counter <= bit_counter + 1;
