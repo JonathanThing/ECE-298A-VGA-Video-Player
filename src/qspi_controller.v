@@ -18,6 +18,8 @@ module qspi_controller (
     input  wire        spi_io2,    // IO2
     input  wire        spi_io3,     // IO3/HOLD
 
+
+
     // Output interface
     output wire [18:0] instruction,        // 19-bit data output
     output wire        spi_cs_oe,
@@ -44,6 +46,8 @@ module qspi_controller (
     reg        di_reg;
     reg [3:0]  oe_sig;      // 1 for output; 0 for input
     reg        hold_n_reg;
+
+    reg        hold_read;
     
     wire [3:0] io_in_data;
     
@@ -86,11 +90,13 @@ module qspi_controller (
                     valid_reg <= 1'b0;
                     di_reg <= 1'b0;
                     hold_n_reg <= 1;
+                    hold_read <= 0;
                     state <= SEND_CMD;
                 end
                 
                 SEND_CMD: begin
                     cs_n_reg <= 1'b0;
+
                     // Send 8-bit command (6Bh = 01101011) on DI, MSB first
                     case (bit_counter)
                         0: di_reg <= 1'b0;  // bit 7
@@ -105,6 +111,7 @@ module qspi_controller (
                     endcase
                     
                     bit_counter <= bit_counter + 1;
+
                     if (bit_counter == 7) begin  // 8 bits
                         state <= DUMMY_CYCLES;
                         bit_counter <= 8'b0;
@@ -115,6 +122,7 @@ module qspi_controller (
                     // Wait for dummy cycles (32 dummy clocks as per datasheet)
                     di_reg <= 1'b0;  // Keep DI low during dummy cycles
                     bit_counter <= bit_counter + 1;
+
                     if (bit_counter == 31) begin  // 32 dummy cycles
                         state <= READ_DATA;
                         bit_counter <= 8'b0;

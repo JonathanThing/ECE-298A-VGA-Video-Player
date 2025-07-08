@@ -12,7 +12,8 @@ module instruction_decoder (
     input  wire        pixel_req,     // Request for next pixel from VGA
     
     output wire [8:0]  rgb_out,       // 9-bit RGB output (RRRGGGBBB)
-    output wire        rgb_valid      // High when RGB output is valid
+    output wire        rgb_valid,      // High when RGB output is valid
+    output wire        cont_shift
 );
 
     // Internal registers
@@ -25,6 +26,7 @@ module instruction_decoder (
     // Output assignments
     assign rgb_out = current_rgb;
     assign rgb_valid = rgb_valid_reg;
+    assign cont_shift = !have_data;
 
     // Main decoder logic - single always block
     always @(posedge clk) begin
