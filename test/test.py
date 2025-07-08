@@ -5,6 +5,8 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, RisingEdge, FallingEdge, Timer
 
+import scripts.qspi_sim as qspi_sim
+
 @cocotb.test()
 async def test_project(dut):
     dut._log.info("Start")
@@ -49,11 +51,21 @@ async def test_project(dut):
         dataOutput = dut.uio_out[7].value
         assert outputEnable == 1, f"Expected output enable to be high at bit {i}, got {outputEnable}"
         assert dataOutput == 1, f"Expected hold pin to be high at bit {i}, got {dataOutput}"
-        await FallingEdge(dut.clk)
+        if (i < 31):
+            await FallingEdge(dut.clk)
 
+    await RisingEdge(dut.clk)
+    # # Update Data
+    # for i in range(2*8):
+    #     inputData = int(qspi_sim.clock_data())
+    #     print(f"{inputData:01X}", end="")
+    #     if (i%2 == 1):
+    #         print(" ", end="")
+    # print("")
+
+    await FallingEdge(dut.clk)
     outputEnable = dut.uio_oe[7].value
     assert outputEnable == 0, f"Expected output enable to be low at end of instruction, got {outputEnable}"
     print("QSPI instruction sent successfully")
 
-    await ClockCycles(dut.clk, 5)
     assert True
