@@ -1,6 +1,6 @@
 from PIL import Image
 
-img = Image.open("input.bmp")
+img = Image.open("input.png")
 
 width, height = img.size
 
@@ -15,6 +15,11 @@ colour = (-1, -1, -1)
 # Data format 24 bits
 # [5 bit unused][10 bits run][3 bits red][3 bits green][3 bits blue]
 def write_rle_instruction(f, run_length, r, g, b):
+
+    if run_length < 5:
+        # Warn, may change if capabilities change
+        print(f"Run of {run} pixels at ({x}, {y}) with colour {colour} is too short")
+
     r_3bit = (r >> 5) & 0x7
     g_3bit = (g >> 5) & 0x7  
     b_3bit = (g >> 5) & 0x7  
@@ -34,11 +39,17 @@ with open("output.bin", "wb") as f:
             elif colour == (r, g, b):
                 run += 1
             else:
-                if run < 5:
-                    # Warn, may change if capabilities change
-                    print(f"Run of {run} pixels at ({x}, {y}) with colour {colour} is too short")
-                
                 write_rle_instruction(f, run, r, g, b)
 
                 run = 1
                 colour = (r, g, b)
+                # endif
+            #end if
+        #end for
+        
+        write_rle_instruction(f, run, r, g, b)
+        run = 0
+        colour = (-1, -1, -1)
+
+
+

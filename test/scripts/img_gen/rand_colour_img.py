@@ -52,6 +52,6 @@ for by in range(blocks_y):
             for x in range(bx * block_size, (bx + 1) * block_size):
                 img.putpixel((x, y), color)
 
-img.save("random_mixed_checkered.bmp")
-print("Image saved as random_mixed_checkered_rgb.bmp")
+img.save("random_mixed_checkered.png")
+print("Image saved as random_mixed_checkered.png")
 
