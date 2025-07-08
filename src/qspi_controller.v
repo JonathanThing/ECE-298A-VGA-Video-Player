@@ -81,7 +81,7 @@ module qspi_controller (
             case (state)
                 IDLE: begin
                     oe_sig <= 4'b1111;
-                    cs_n_reg <= 1'b0;          // Assert chip select
+                    cs_n_reg <= 1'b1;          // Assert chip select
                     bit_counter <= 8'b0;
                     valid_reg <= 1'b0;
                     di_reg <= 1'b0;
@@ -90,6 +90,7 @@ module qspi_controller (
                 end
                 
                 SEND_CMD: begin
+                    cs_n_reg <= 1'b0;
                     // Send 8-bit command (6Bh = 01101011) on DI, MSB first
                     case (bit_counter)
                         0: di_reg <= 1'b0;  // bit 7
@@ -104,7 +105,7 @@ module qspi_controller (
                     endcase
                     
                     bit_counter <= bit_counter + 1;
-                    if (bit_counter == 7) begin  // 8 bits sent in 8 cycles
+                    if (bit_counter == 8) begin  // 8 bits sent in 8 cycles
                         state <= DUMMY_CYCLES;
                         bit_counter <= 8'b0;
                         di_reg <= 1'b0;
@@ -114,7 +115,7 @@ module qspi_controller (
                 DUMMY_CYCLES: begin
                     // Wait for dummy cycles (32 dummy clocks as per datasheet)
                     bit_counter <= bit_counter + 1;
-                    if (bit_counter == 31) begin  // 32 dummy cycles
+                    if (bit_counter == 32) begin  // 32 dummy cycles
                         oe_sig <= 4'b0101;
                         state <= READ_DATA;
                         bit_counter <= 8'b0;
@@ -126,7 +127,7 @@ module qspi_controller (
                     instruction_reg <= {instruction_reg[15:0], io_in_data};
                     bit_counter <= bit_counter + 1;
                     
-                    if (bit_counter == 4) begin  // 20 bits received (5 cycles)
+                    if (bit_counter == 5) begin  // 20 bits received (5 cycles)
                         valid_reg <= 1'b1;
                         bit_counter <= 8'b0;
                         // Continue reading next instruction

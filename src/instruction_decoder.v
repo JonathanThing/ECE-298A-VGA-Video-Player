@@ -16,7 +16,7 @@ module instruction_decoder (
 );
 
     // Internal registers
-    reg [10:0] run_length;     // Current run length (11 bits: 0-2047)
+    reg [10:0] run_length;     // Current run length (11 bits: 0-2047)               TODO: Change run length to 10 bits as
     reg [10:0] run_counter;    // Counter for current run
     reg [8:0]  current_rgb;    // Current RGB value
     reg        rgb_valid_reg;  // RGB valid flag
