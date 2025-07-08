@@ -54,8 +54,6 @@ module tt_um_jonathan_thing_vga (
         .spi_io1(ui_in[2]),
         .spi_io2(ui_in[3]),
         .spi_io3(uio_in[7]),
-        
-        .allow_read(decode_allow_shift),
 
         .instruction(spi_data),
         .spi_cs_oe(uio_oe[2]),

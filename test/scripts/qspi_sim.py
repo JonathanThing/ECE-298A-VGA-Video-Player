@@ -4,8 +4,6 @@ clocks = 0
 with open("resources/data.bin", "rb") as f:
     data = f.read()
 
-# LSB 
-
 def get_half_byte():
     global index
     if ((clocks % 2) == 0): # Upper Nibble
