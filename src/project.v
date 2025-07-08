@@ -74,7 +74,7 @@ module tt_um_jonathan_thing_vga (
     wire data_3_ready;
     wire data_4_ready;
 
-    reg enable_flash_read;
+    wire enable_flash_read;
 
     data_buffer buf0(
         .clk(clk),
