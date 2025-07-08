@@ -8,15 +8,15 @@ module data_buffer (
     input  wire        clk,         // Clock
     input  wire        rst_n,       // Reset (active low)
     input  wire        shift_en,    // Enable shifting in new data
-    input  wire [19:0] data_in,     // 20-bit data input (upper 4 bits used)
+    input  wire [18:0] data_in,     
     input  wire        prev_empty,
     
-    output wire [19:0] instruction, // 20-bit instruction output
+    output wire [18:0] instruction,
     output wire        valid        // High when instruction is complete and valid
 );
 
     // Internal registers
-    reg [19:0] shift_reg;    // 20-bit shift register
+    reg [18:0] shift_reg;    // 20-bit shift register
     reg [2:0]  bit_count;    // Count of 4-bit nibbles received (0-4)
     reg        valid_reg;    // Valid flag register
     
@@ -29,13 +29,12 @@ module data_buffer (
     // Main logic
     always @(posedge clk) begin
         if (!rst_n) begin
-            shift_reg <= 20'b0;
+            shift_reg <= 19'b0;
             bit_count <= 3'b0;
             valid_reg <= 1'b0;
         end else begin
             if (shift_en) begin
-                // Shift in upper 4 bits (MSB first)
-                shift_reg <= {shift_reg[15:0], data_in[19:16]};
+                shift_reg <= data_in[18:0];
                 
                 // Update bit count only when previous was not empty
                 if (!prev_empty) begin

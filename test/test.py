@@ -3,15 +3,16 @@
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles
+from cocotb.triggers import ClockCycles, RisingEdge, FallingEdge, Timer
 
+import scripts.qspi_sim as qspi_sim
 
 @cocotb.test()
 async def test_project(dut):
     dut._log.info("Start")
 
     # Set the clock period to 10 us (100 KHz)
-    clock = Clock(dut.clk, 10, units="us")
+    clock = Clock(dut.clk, 40, units="ns")
     cocotb.start_soon(clock.start())
 
     # Reset
@@ -19,22 +20,52 @@ async def test_project(dut):
     dut.ena.value = 1
     dut.ui_in.value = 0
     dut.uio_in.value = 0
+    dut.uo_out.value = 0
+    dut.uio_out.value = 0
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 2)
     dut.rst_n.value = 1
 
     dut._log.info("Test project behavior")
 
-    # Set the input values you want to test
-    dut.ui_in.value = 20
-    dut.uio_in.value = 30
+    dut._log.info("Awaiting CS Low")
+    while dut.uio_out[2] != 0:
+        await FallingEdge(dut.clk)
 
-    # Wait for one clock cycle to see the output values
-    await ClockCycles(dut.clk, 1)
+    instruction = 0x6b
+    dut._log.info("Sending QSPI Instruction")
 
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
+    for i in range(8):
+        dataOutput = dut.uio_out[3].value
+        if (instruction & (1 << (7-i))): # 1
+            assert dataOutput == 1, f"Expected bit {i} to be 1, got {dataOutput}"
+        else:  # 0
+            assert dataOutput == 0, f"Expected bit {i} to be 0, got {dataOutput}"
+        await FallingEdge(dut.clk)
+
+    dut._log.info("Instruction code send successfully, Sending dummy data")
+
+    for i in range(32):
+        # Check if hold pin is held high
+        outputEnable = dut.uio_oe[7].value
+        dataOutput = dut.uio_out[7].value
+        assert outputEnable == 1, f"Expected output enable to be high at bit {i}, got {outputEnable}"
+        assert dataOutput == 1, f"Expected hold pin to be high at bit {i}, got {dataOutput}"
+        if (i < 31):
+            await FallingEdge(dut.clk)
+
+    await RisingEdge(dut.clk)
+    # # Update Data
+    # for i in range(2*8):
+    #     inputData = int(qspi_sim.clock_data())
+    #     print(f"{inputData:01X}", end="")
+    #     if (i%2 == 1):
+    #         print(" ", end="")
+    # print("")
+
+    await FallingEdge(dut.clk)
+    outputEnable = dut.uio_oe[7].value
+    assert outputEnable == 0, f"Expected output enable to be low at end of instruction, got {outputEnable}"
+    print("QSPI instruction sent successfully")
+
     assert True
-
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.

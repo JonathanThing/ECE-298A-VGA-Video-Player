@@ -7,7 +7,7 @@
 module instruction_decoder (
     input  wire        clk,           // Clock
     input  wire        rst_n,         // Reset (active low)
-    input  wire [19:0] instruction,   // 20-bit instruction input
+    input  wire [18:0] instruction,   // 20-bit instruction input
     input  wire        instr_valid,   // High when instruction is valid
     input  wire        pixel_req,     // Request for next pixel from VGA
     
@@ -17,8 +17,8 @@ module instruction_decoder (
 );
 
     // Internal registers
-    reg [10:0] run_length;     // Current run length (11 bits: 0-2047)
-    reg [10:0] run_counter;    // Counter for current run
+    reg [9:0] run_length;     // Current run length (11 bits: 0-2047)               TODO: Change run length to 10 bits as
+    reg [9:0] run_counter;    // Counter for current run
     reg [8:0]  current_rgb;    // Current RGB value
     reg        rgb_valid_reg;  // RGB valid flag
     reg        have_data;      // Flag indicating we have valid data to output
@@ -31,8 +31,8 @@ module instruction_decoder (
     // Main decoder logic - single always block
     always @(posedge clk) begin
         if (!rst_n) begin
-            run_length <= 11'b0;
-            run_counter <= 11'b0;
+            run_length <= 10'b0;
+            run_counter <= 10'b0;
             current_rgb <= 9'b0;
             rgb_valid_reg <= 1'b0;
             have_data <= 1'b0;
@@ -42,9 +42,9 @@ module instruction_decoder (
             
             // Load new instruction
             if (instr_valid) begin
-                run_length <= instruction[19:9];   // Extract run length
+                run_length <= instruction[18:9];   // Extract run length
                 current_rgb <= instruction[8:0];   // Extract RGB color
-                run_counter <= 11'b0;              // Reset counter
+                run_counter <= 10'b0;              // Reset counter
                 have_data <= 1'b1;                 // Mark that we have data
             end
             

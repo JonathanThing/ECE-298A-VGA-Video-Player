@@ -31,7 +31,7 @@ module tt_um_jonathan_thing_vga (
 );
 
     wire spi_ready;
-    wire [19:0] spi_data;
+    wire [18:0] spi_data;
     wire spi_active;
 
     wire decode_allow_shift;
@@ -66,10 +66,10 @@ module tt_um_jonathan_thing_vga (
         .active(spi_active)
     );
 
-    wire [19:0] data_1;
-    wire [19:0] data_2;
-    wire [19:0] data_3;
-    wire [19:0] data_4;
+    wire [18:0] data_1;
+    wire [18:0] data_2;
+    wire [18:0] data_3;
+    wire [18:0] data_4;
 
     wire data_1_ready;
     wire data_2_ready;
