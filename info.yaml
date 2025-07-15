@@ -22,6 +22,7 @@ project:
     - "data_buffer.v"
     - "qspi_controller.v"
     - "vga_module.v"
+    - "qspi_fsm.v"
 
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.

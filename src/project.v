@@ -41,7 +41,7 @@ module tt_um_jonathan_thing_vga (
 
     assign uio_oe[1:0] = 2'b11;
 
-    qspi_controller qspi_cont_inst (
+    qspi_fsm qspi_cont_inst (
         .clk(clk),
         .rst_n(rst_n),
         .spi_clk(uio_out[4]),
