@@ -60,7 +60,7 @@ module tt_um_jonathan_thing_vga (
         .spi_sclk_oe(uio_oe[4]),
         .spi_hold_n_oe(uio_oe[6]),
         .valid(spi_ready),       // High when instruction is valid
-        .shift_data(0)
+        .shift_data(1)
     );
 
     wire [17:0] data_1;
@@ -73,12 +73,12 @@ module tt_um_jonathan_thing_vga (
     wire data_3_empty;
     wire data_4_empty;
 
-    wire enable_flash_read;
+    wire global_shift;
 
-    data_buffer buf0(
+    data_buffer buf1(
         .clk(clk),
         .rst_n(rst_n),
-        .shift_data(enable_flash_read),
+        .shift_data(global_shift | data_2_empty | data_3_empty | data_4_empty),
         
         .data_in(spi_data),
         .prev_empty(!spi_ready),
@@ -86,10 +86,10 @@ module tt_um_jonathan_thing_vga (
         .empty(data_1_empty)
     );
 
-    data_buffer buf1(
+    data_buffer buf2(
         .clk(clk),
         .rst_n(rst_n),
-        .shift_data(enable_flash_read),
+        .shift_data(global_shift | data_3_empty | data_4_empty),
 
         .data_in(data_1),
         .prev_empty(data_1_empty),
@@ -97,10 +97,10 @@ module tt_um_jonathan_thing_vga (
         .empty(data_2_empty)
     );
 
-    data_buffer buf2(
+    data_buffer buf3(
         .clk(clk),
         .rst_n(rst_n),
-        .shift_data(enable_flash_read),
+        .shift_data(global_shift | data_4_empty),
 
         .data_in(data_2),
         .prev_empty(data_2_empty),
@@ -108,10 +108,10 @@ module tt_um_jonathan_thing_vga (
         .empty(data_3_empty)
     );
 
-    data_buffer buf3(
+    data_buffer buf4(
         .clk(clk),
         .rst_n(rst_n),
-        .shift_data(enable_flash_read),
+        .shift_data(global_shift),
 
         .data_in(data_3),
         .prev_empty(data_3_empty),
@@ -134,7 +134,7 @@ module tt_um_jonathan_thing_vga (
         .cont_shift(decode_allow_shift)
     );
 
-    assign enable_flash_read = decode_allow_shift && spi_active; // Shift is there is no data in decoder
+    assign global_shift = decode_allow_shift; // Shift is there is no data in decoder
 
     vga_module vga_inst(
         .clk(clk),

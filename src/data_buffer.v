@@ -28,7 +28,7 @@ module data_buffer (
             buf_reg <= 18'b0;
             empty_reg <= 1'b1;
         end else begin
-            if (shift_data | prev_empty) begin          // Shift Data requested
+            if (shift_data | empty_reg) begin          // Shift Data requested
                 if (prev_empty) begin                   // If previous is empty, shift empty
                     buf_reg <= 18'b0;
                     empty_reg <= 1'b1;

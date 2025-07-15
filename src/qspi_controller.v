@@ -108,9 +108,9 @@ module qspi_controller (
                     
                     bit_counter <= bit_counter + 1;
 
-                    if (bit_counter == 7) begin  // 8 bits
+                    if (bit_counter == 8) begin  // Is next clk going to be 9th bit
                         state <= DUMMY_CYCLES;
-                        bit_counter <= 8'b0;
+                        bit_counter <= 8'b1;
                     end
                 end
                 
@@ -119,23 +119,25 @@ module qspi_controller (
                     di_reg <= 1'b0;  // Keep DI low during dummy cycles
                     bit_counter <= bit_counter + 1;
 
-                    if (bit_counter == 31) begin  // 32 dummy cycles
+                    if (bit_counter == 32) begin  // 31 cycles already occured,
+                        oe_sig <= 4'b0101;
                         state <= READ_DATA;
-                        bit_counter <= 8'b0;
+                        bit_counter <= 8'b1;
                     end
                 end
                 
                 READ_DATA: begin
-                    oe_sig <= 4'b0101;
                     
                     // Read 24 bits of data (6 cycles of 4 bits each)
                     instruction_reg <= {instruction_reg[19:0], io_in_data};
                     bit_counter <= bit_counter + 1;
                     
-                    if (bit_counter == 5) begin  // 3 bytes received (6 cycles)
+                    if (bit_counter == 6) begin  // 3 bytes received (6 cycles)
                         valid_reg <= 1'b1;
-                        bit_counter <= 8'b0;
-                        state <= WAIT_DATA;
+                        bit_counter <= 8'b1;
+                        if (!shift_data) begin
+                            state <= WAIT_DATA;
+                        end
                     end else begin
                         valid_reg <= 1'b0;
                     end
@@ -146,6 +148,7 @@ module qspi_controller (
                     if (shift_data) begin   // Wait for data to be consumed until reading next message
                         state <= READ_DATA;
                         hold_read <= 1'b0;
+                        bit_counter <= 8'b1;
                     end
                 end
 
