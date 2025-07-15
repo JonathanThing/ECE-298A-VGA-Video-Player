@@ -21,7 +21,7 @@ module qspi_controller (
 
 
     // Output interface
-    output wire [18:0] instruction,        // 19-bit data output
+    output wire [17:0] instruction,        // 18-bit data output
     output wire        spi_cs_oe,
     output wire        spi_di_oe,
     output wire        spi_sclk_oe,
@@ -61,7 +61,7 @@ module qspi_controller (
     assign io_in_data = {spi_io3, spi_io2, spi_io1, spi_io0};
     
     // Output assignments
-    assign instruction = instruction_reg[18:0];
+    assign instruction = instruction_reg[17:0];
     assign valid = valid_reg;
     assign spi_cs_oe = oe_sig[0];
     assign spi_di_oe = oe_sig[1];

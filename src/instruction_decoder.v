@@ -1,13 +1,13 @@
 /*
  * Instruction Decoder Module
  * Decodes 20-bit instructions into run-length encoded RGB data
- * Format: [18:8] Run length (11 bits), [7:0] RGB color (RRRGGGBB)
+ * Format: [17:8] Run length (10 bits), [7:0] RGB color (RRRGGGBB)
  */
 
 module instruction_decoder (
     input  wire        clk,           // Clock
     input  wire        rst_n,         // Reset (active low)
-    input  wire [18:0] instruction,   // Only need 19 bits for instruction
+    input  wire [17:0] instruction,   // Only need 18 bits for instruction
     input  wire        instr_valid,   // High when instruction is valid
     input  wire        pixel_req,     // Request for next pixel from VGA
     
@@ -17,7 +17,7 @@ module instruction_decoder (
 );
 
     // Internal registers
-    reg [9:0] run_length;     // Current run length (11 bits: 0-2047)               TODO: Change run length to 10 bits as
+    reg [9:0] run_length;     // Current run length (10 bits)
     reg [9:0] run_counter;    // Counter for current run
     reg [7:0]  current_rgb;    // Current RGB value
     reg        rgb_valid_reg;  // RGB valid flag
@@ -42,7 +42,7 @@ module instruction_decoder (
             
             // Load new instruction
             if (instr_valid) begin
-                run_length <= instruction[18:8];   // Extract run length
+                run_length <= instruction[17:8];   // Extract run length
                 current_rgb <= instruction[7:0];   // Extract RGB color
                 run_counter <= 10'b0;              // Reset counter
                 have_data <= 1'b1;                 // Mark that we have data
