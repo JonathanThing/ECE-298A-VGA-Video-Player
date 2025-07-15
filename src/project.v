@@ -14,7 +14,7 @@
 3 IO2             G[0]        IO0 (DI)  (I/O)
 4                 G[1]        SCLK      (OUT ONLY)
 5                 G[2]        PWM Audio (OUT ONLY)
-6                 B[0]        B[2]      (OUT ONLY)
+6                 B[0]        
 7                 B[1]        IO3 (HOLD)(I/O)
 
 */
@@ -120,7 +120,7 @@ module tt_um_jonathan_thing_vga (
         .valid(data_4_ready)
     );
 
-    wire [8:0] colour_in;
+    wire [7:0] colour_in;
     wire req_next_pix;
     wire pixel_ready;
 
@@ -150,7 +150,7 @@ module tt_um_jonathan_thing_vga (
         .vsync(uio_out[1]),
         .red(uo_out[2:0]),
         .green(uo_out[5:3]),
-        .blue({uio_out[6], uo_out[7:6]}),
+        .blue(uo_out[7:6]),
         .pixel_req(req_next_pix)
     );
     

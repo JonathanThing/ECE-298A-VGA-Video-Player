@@ -7,14 +7,14 @@
 module vga_module (
     input  wire       clk,        // 25MHz pixel clock
     input  wire       rst_n,      // Reset (active low)
-    input  wire [8:0] rgb_in,     // 9-bit RGB input (RRRGGGBBB)
+    input  wire [7:0] rgb_in,     // 8-bit RGB input (RRRGGGBB)
     input  wire       rgb_valid,  // High when RGB input is valid
     
     output wire       hsync,      // Horizontal sync
     output wire       vsync,      // Vertical sync
     output wire [2:0] red,        // Red output (3 bits)
     output wire [2:0] green,      // Green output (3 bits) 
-    output wire [2:0] blue,       // Blue output (3 bits)
+    output wire [1:0] blue,       // Blue output (2 bits)
     output wire       pixel_req   // Request for next pixel
 );
 
@@ -40,7 +40,7 @@ module vga_module (
     reg vsync_reg;
     reg [2:0] red_reg;
     reg [2:0] green_reg;
-    reg [2:0] blue_reg;
+    reg [1:0] blue_reg;
     
     // Display area flags
     wire h_display_area;
@@ -71,7 +71,7 @@ module vga_module (
             vsync_reg <= 1'b1;
             red_reg <= 3'b0;
             green_reg <= 3'b0;
-            blue_reg <= 3'b0;
+            blue_reg <= 2'b0;
         end else begin
             // Horizontal and vertical counters
             if (h_counter == H_TOTAL - 1) begin
@@ -97,15 +97,15 @@ module vga_module (
             
             // RGB output logic
             if (display_area && rgb_valid) begin
-                // Extract RGB components from 9-bit input (RRRGGGBBB)
-                red_reg <= rgb_in[8:6];    // Bits [8:6] = Red
-                green_reg <= rgb_in[5:3];  // Bits [5:3] = Green  
-                blue_reg <= rgb_in[2:0];   // Bits [2:0] = Blue
+                // Extract RGB components from 8-bit input (RRRGGGBB)
+                red_reg <= rgb_in[7:5];    // Bits [7:5] = Red
+                green_reg <= rgb_in[4:2];  // Bits [4:2] = Green  
+                blue_reg <= rgb_in[1:0];   // Bits [1:0] = Blue
             end else begin
                 // Output black when not in display area or no valid data
                 red_reg <= 3'b0;
                 green_reg <= 3'b0;
-                blue_reg <= 3'b0;
+                blue_reg <= 2'b0;
             end
         end
     end

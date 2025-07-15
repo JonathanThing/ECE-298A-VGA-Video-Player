@@ -13,7 +13,7 @@ run = 0
 colour = (-1, -1, -1) 
 
 # Data format 24 bits
-# [5 bit unused][10 bits run][3 bits red][3 bits green][3 bits blue]
+# [6 bit unused][10 bits run][3 bits red][3 bits green][2 bits blue]
 def write_rle_instruction(f, run_length, r, g, b):
 
     if run_length < 5:
