@@ -18,15 +18,15 @@ module qspi_controller (
     input  wire        spi_io2,    // IO2
     input  wire        spi_io3,     // IO3/HOLD
 
+    input  wire        shift_data,  // Shift data through the buffers
+
     // Output interface
     output wire [17:0] instruction,        // 18-bit data output
     output wire        spi_cs_oe,
     output wire        spi_di_oe,
     output wire        spi_sclk_oe,
     output wire        spi_hold_n_oe,
-    output wire        valid,       // High when instruction is valid
-
-    output wire        active       // whether the spi is active
+    output wire        valid           // High when instruction is valid
 );
 
     // State machine states
@@ -34,6 +34,7 @@ module qspi_controller (
     localparam SEND_CMD     = 3'b001;
     localparam DUMMY_CYCLES = 3'b010;
     localparam READ_DATA    = 3'b011;
+    localparam WAIT_DATA    = 3'b111;
 
     // Internal signals
     reg [2:0]  state;
@@ -44,13 +45,12 @@ module qspi_controller (
     reg        di_reg;
     reg [3:0]  oe_sig;      // 1 for output; 0 for input
     reg        hold_n_reg;
-
     reg        hold_read;
     
     wire [3:0] io_in_data;
     
     // SPI clock is inverted system clock
-    assign spi_clk = !clk;
+    assign spi_clk = !clk & !hold_read;
     assign spi_cs_n = cs_n_reg;
     assign spi_di = di_reg;
     assign spi_hold_n = hold_n_reg;
@@ -65,8 +65,6 @@ module qspi_controller (
     assign spi_di_oe = oe_sig[1];
     assign spi_sclk_oe = oe_sig[2];
     assign spi_hold_n_oe = oe_sig[3];
-
-    assign active = (state == READ_DATA) ? 1 : 0;
     
     // Main state machine
     always @(posedge clk) begin
@@ -82,18 +80,18 @@ module qspi_controller (
         end else begin
             case (state)
                 IDLE: begin
-                    oe_sig <= 4'b1111;
-                    cs_n_reg <= 1'b1;          // Assert chip select
+                    oe_sig <= 4'b1111;          
+                    cs_n_reg <= 1'b1;          // Release chip select
                     bit_counter <= 8'b0;
                     valid_reg <= 1'b0;
                     di_reg <= 1'b0;
                     hold_n_reg <= 1;
                     hold_read <= 0;
-                    state <= SEND_CMD;
+                    state <= SEND_CMD;   
                 end
                 
                 SEND_CMD: begin
-                    cs_n_reg <= 1'b0;
+                    cs_n_reg <= 1'b0;       // Pull CS low
 
                     // Send 8-bit command (6Bh = 01101011) on DI, MSB first
                     case (bit_counter)
@@ -134,16 +132,23 @@ module qspi_controller (
                     instruction_reg <= {instruction_reg[19:0], io_in_data};
                     bit_counter <= bit_counter + 1;
                     
-                    if (bit_counter == 6) begin  // 3 bytes received (6 cycles)
+                    if (bit_counter == 5) begin  // 3 bytes received (6 cycles)
                         valid_reg <= 1'b1;
                         bit_counter <= 8'b0;
-                        // Continue reading next instruction
-                        // In sequential mode, we just keep reading
+                        state <= WAIT_DATA;
                     end else begin
                         valid_reg <= 1'b0;
                     end
                 end
-                
+
+                WAIT_DATA: begin        
+                    hold_read <= 1'b1;
+                    if (shift_data) begin   // Wait for data to be consumed until reading next message
+                        state <= READ_DATA;
+                        hold_read <= 1'b0;
+                    end
+                end
+
                 default: begin
                     state <= IDLE;
                     oe_sig <= 4'b1101;
