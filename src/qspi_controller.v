@@ -3,6 +3,8 @@
  * Continuously reads 20-bit instructions from SPI flash
  */
 
+ /* To Do: Rewrite with proper FSM format */
+
 module qspi_controller (
     input  wire        clk,        // 25MHz pixel clock
     input  wire        rst_n,      // Reset (active low)
@@ -48,7 +50,7 @@ module qspi_controller (
     reg        hold_read;
     
     wire [3:0] io_in_data;
-    
+
     // SPI clock is inverted system clock
     assign spi_clk = !clk & !hold_read;
     assign spi_cs_n = cs_n_reg;
@@ -108,9 +110,10 @@ module qspi_controller (
                     
                     bit_counter <= bit_counter + 1;
 
-                    if (bit_counter == 8) begin  // Is next clk going to be 9th bit
+                    // We check 8 and not 7 because the SEND_CMD state starts one bit early
+                    if (bit_counter == 8) begin  
                         state <= DUMMY_CYCLES;
-                        bit_counter <= 8'b1;
+                        bit_counter <= 8'b0;
                     end
                 end
                 
@@ -119,10 +122,10 @@ module qspi_controller (
                     di_reg <= 1'b0;  // Keep DI low during dummy cycles
                     bit_counter <= bit_counter + 1;
 
-                    if (bit_counter == 32) begin  // 31 cycles already occured,
+                    if (bit_counter == 31) begin  // 31 cycles already occured,
                         oe_sig <= 4'b0101;
                         state <= READ_DATA;
-                        bit_counter <= 8'b1;
+                        bit_counter <= 8'b0;
                     end
                 end
                 
@@ -132,9 +135,9 @@ module qspi_controller (
                     instruction_reg <= {instruction_reg[19:0], io_in_data};
                     bit_counter <= bit_counter + 1;
                     
-                    if (bit_counter == 6) begin  // 3 bytes received (6 cycles)
+                    if (bit_counter == 5) begin  // 3 bytes received (6 cycles)
                         valid_reg <= 1'b1;
-                        bit_counter <= 8'b1;
+                        bit_counter <= 8'b0;
                         if (!shift_data) begin
                             state <= WAIT_DATA;
                         end
@@ -148,7 +151,7 @@ module qspi_controller (
                     if (shift_data) begin   // Wait for data to be consumed until reading next message
                         state <= READ_DATA;
                         hold_read <= 1'b0;
-                        bit_counter <= 8'b1;
+                        bit_counter <= 8'b0;
                     end
                 end
 
