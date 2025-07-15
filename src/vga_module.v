@@ -8,8 +8,7 @@ module vga_module (
     input  wire       clk,        // 25MHz pixel clock
     input  wire       rst_n,      // Reset (active low)
     input  wire [7:0] rgb_in,     // 8-bit RGB input (RRRGGGBB)
-    input  wire       rgb_valid,  // High when RGB input is valid
-    
+
     output wire       hsync,      // Horizontal sync
     output wire       vsync,      // Vertical sync
     output wire [2:0] red,        // Red output (3 bits)
@@ -24,12 +23,16 @@ module vga_module (
     localparam H_SYNC       = 96;
     localparam H_BACK       = 48;
     localparam H_TOTAL      = H_DISPLAY + H_FRONT + H_SYNC + H_BACK; // 800
+    localparam H_PULSE_START = H_DISPLAY + H_FRONT; 
+    localparam H_PULSE_END   = H_DISPLAY + H_FRONT + H_SYNC;
 
     localparam V_DISPLAY    = 480;
     localparam V_FRONT      = 10;
     localparam V_SYNC       = 2;
     localparam V_BACK       = 33;
     localparam V_TOTAL      = V_DISPLAY + V_FRONT + V_SYNC + V_BACK; // 525
+    localparam V_PULSE_START = V_DISPLAY + V_FRONT;
+    localparam V_PULSE_END   = V_DISPLAY + V_FRONT + V_SYNC;
 
     // Internal counters
     reg [9:0] h_counter;    // Horizontal counter (0-799)
@@ -59,8 +62,8 @@ module vga_module (
     assign v_display_area = (v_counter < V_DISPLAY);
     assign display_area = h_display_area && v_display_area;
     
-    // Pixel request: assert when we're about to enter display area
-    assign pixel_req = display_area && rgb_valid;
+    // Pixel request: assert when in the display area
+    assign pixel_req = display_area;
     
     // Main VGA logic - single always block
     always @(posedge clk) begin
@@ -88,15 +91,15 @@ module vga_module (
             
             // Sync signal generation
             // HSYNC: active low during sync period
-            hsync_reg <= ~((h_counter >= (H_DISPLAY + H_FRONT)) && 
-                          (h_counter < (H_DISPLAY + H_FRONT + H_SYNC)));
+            hsync_reg <= ~((h_counter >= H_PULSE_START) && 
+                          (h_counter < H_PULSE_END));
             
             // VSYNC: active low during sync period  
-            vsync_reg <= ~((v_counter >= (V_DISPLAY + V_FRONT)) && 
-                          (v_counter < (V_DISPLAY + V_FRONT + V_SYNC)));
+            vsync_reg <= ~(v_counter >= (V_PULSE_START)) && 
+                          (v_counter < (V_PULSE_END));
             
             // RGB output logic
-            if (display_area && rgb_valid) begin
+            if (display_area) begin 
                 // Extract RGB components from 8-bit input (RRRGGGBB)
                 red_reg <= rgb_in[7:5];    // Bits [7:5] = Red
                 green_reg <= rgb_in[4:2];  // Bits [4:2] = Green  

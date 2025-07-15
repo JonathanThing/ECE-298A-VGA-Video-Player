@@ -12,7 +12,6 @@ module instruction_decoder (
     input  wire        pixel_req,     // Request for next pixel from VGA
     
     output wire [7:0]  rgb_out,       // 8-bit RGB output (RRRGGGBB)
-    output wire        rgb_valid,      // High when RGB output is valid
     output wire        cont_shift
 );
 

@@ -122,7 +122,6 @@ module tt_um_jonathan_thing_vga (
 
     wire [7:0] colour_in;
     wire req_next_pix;
-    wire pixel_ready;
 
     instruction_decoder decoder(
         .clk(clk),
@@ -133,7 +132,6 @@ module tt_um_jonathan_thing_vga (
         .pixel_req(req_next_pix),
 
         .rgb_out(colour_in),
-        .rgb_valid(pixel_ready),
         .cont_shift(decode_allow_shift)
     );
 
@@ -144,7 +142,6 @@ module tt_um_jonathan_thing_vga (
         .rst_n(rst_n),
 
         .rgb_in(colour_in),
-        .rgb_valid(pixel_ready),
         
         .hsync(uio_out[0]),
         .vsync(uio_out[1]),
