@@ -54,8 +54,8 @@ pinout:
   uio[3]: "IO_0"
   uio[4]: "SCLK"
   uio[5]: "PWM"
-  uio[6]: "B_2"
-  uio[7]: "IO_3"
+  uio[6]: "IO_3"
+  uio[7]: ""
 
 # Do not change!
 yaml_version: 6

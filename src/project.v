@@ -14,8 +14,8 @@
 3 IO2             G[0]        IO0 (DI)  (I/O)
 4                 G[1]        SCLK      (OUT ONLY)
 5                 G[2]        PWM Audio (OUT ONLY)
-6                 B[0]        
-7                 B[1]        IO3 (HOLD)(I/O)
+6                 B[0]        IO3 (HOLD)(I/O)
+7                 B[1]        
 
 */
 
@@ -40,7 +40,6 @@ module tt_um_jonathan_thing_vga (
     assign uio_out[5] = 0;
 
     assign uio_oe[1:0] = 2'b11;
-    assign uio_oe[6] = 1;
 
     qspi_controller qspi_cont_inst (
         .clk(clk),
@@ -48,18 +47,18 @@ module tt_um_jonathan_thing_vga (
         .spi_clk(uio_out[4]),
         .spi_cs_n(uio_out[2]),
         .spi_di(uio_out[3]),
-        .spi_hold_n(uio_out[7]),
+        .spi_hold_n(uio_out[6]),
 
         .spi_io0(uio_in[3]),
         .spi_io1(ui_in[2]),
         .spi_io2(ui_in[3]),
-        .spi_io3(uio_in[7]),
+        .spi_io3(uio_in[6]),
 
         .instruction(spi_data),
         .spi_cs_oe(uio_oe[2]),
         .spi_di_oe(uio_oe[3]),
         .spi_sclk_oe(uio_oe[4]),
-        .spi_hold_n_oe(uio_oe[7]),
+        .spi_hold_n_oe(uio_oe[6]),
         .valid(spi_ready),       // High when instruction is valid
         .active(spi_active)
     );
@@ -69,55 +68,55 @@ module tt_um_jonathan_thing_vga (
     wire [17:0] data_3;
     wire [17:0] data_4;
 
-    wire data_1_ready;
-    wire data_2_ready;
-    wire data_3_ready;
-    wire data_4_ready;
+    wire data_1_empty;
+    wire data_2_empty;
+    wire data_3_empty;
+    wire data_4_empty;
 
     wire enable_flash_read;
 
     data_buffer buf0(
         .clk(clk),
         .rst_n(rst_n),
-        .shift_en(enable_flash_read),
+        .shift_data(enable_flash_read),
         
         .data_in(spi_data),
         .prev_empty(!spi_ready),
-        .instruction(data_1),
-        .valid(data_1_ready)
+        .data_out(data_1),
+        .empty(data_1_empty)
     );
 
     data_buffer buf1(
         .clk(clk),
         .rst_n(rst_n),
-        .shift_en(enable_flash_read),
+        .shift_data(enable_flash_read),
 
         .data_in(data_1),
-        .prev_empty(!data_1_ready),
-        .instruction(data_2),
-        .valid(data_2_ready)
+        .prev_empty(data_1_empty),
+        .data_out(data_2),
+        .empty(data_2_empty)
     );
 
     data_buffer buf2(
         .clk(clk),
         .rst_n(rst_n),
-        .shift_en(enable_flash_read),
+        .shift_data(enable_flash_read),
 
         .data_in(data_2),
-        .prev_empty(!data_2_ready),
-        .instruction(data_3),
-        .valid(data_3_ready)
+        .prev_empty(data_2_empty),
+        .data_out(data_3),
+        .empty(data_3_empty)
     );
 
     data_buffer buf3(
         .clk(clk),
         .rst_n(rst_n),
-        .shift_en(enable_flash_read),
+        .shift_data(enable_flash_read),
 
         .data_in(data_3),
-        .prev_empty(!data_3_ready),
-        .instruction(data_4),
-        .valid(data_4_ready)
+        .prev_empty(data_3_empty),
+        .data_out(data_4),
+        .empty(data_4_empty)
     );
 
     wire [7:0] colour_in;
@@ -128,14 +127,14 @@ module tt_um_jonathan_thing_vga (
         .rst_n(rst_n),
 
         .instruction(data_4),
-        .instr_valid(data_4_ready),
+        .instr_valid(!data_4_empty),
         .pixel_req(req_next_pix),
 
         .rgb_out(colour_in),
         .cont_shift(decode_allow_shift)
     );
 
-    assign enable_flash_read = decode_allow_shift && spi_active;
+    assign enable_flash_read = decode_allow_shift && spi_active; // Shift is there is no data in decoder
 
     vga_module vga_inst(
         .clk(clk),
@@ -152,6 +151,6 @@ module tt_um_jonathan_thing_vga (
     );
     
     // Unused signals
-    wire _unused = &{ena, ui_in[7:4], ui_in[1:0], uio_in[6:4], uio_in[2:0], uio_oe[5], uio_out[5], uio_in[5]};
+    wire _unused = &{ena, ui_in[7:4], ui_in[1:0], uio_in[6:4], uio_in[2:0], uio_oe[5], uio_out[5], uio_in[5], uio_out[7], uio_in[7]};
     
 endmodule

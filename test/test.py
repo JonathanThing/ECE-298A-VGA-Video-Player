@@ -11,7 +11,7 @@ def set_4bit_io(dut, value):
     dut.uio_in[3].value = (value >> 0) & 1  # IO_0
     dut.ui_in[2].value  = (value >> 1) & 1  # IO_1
     dut.ui_in[3].value  = (value >> 2) & 1  # IO_2
-    dut.uio_in[7].value = (value >> 3) & 1  # IO_3
+    dut.uio_in[6].value = (value >> 3) & 1  # IO_3
 
 @cocotb.test()
 async def test_project(dut):
@@ -53,8 +53,8 @@ async def test_project(dut):
 
     for i in range(32):
         # Check if hold pin is held high
-        outputEnable = dut.uio_oe[7].value
-        dataOutput = dut.uio_out[7].value
+        outputEnable = dut.uio_oe[6].value
+        dataOutput = dut.uio_out[6].value
         assert outputEnable == 1, f"Expected output enable to be high at bit {i}, got {outputEnable}"
         assert dataOutput == 1, f"Expected hold pin to be high at bit {i}, got {dataOutput}"
         if (i < 31):
@@ -64,7 +64,7 @@ async def test_project(dut):
     set_4bit_io(dut, int(qspi_sim.clock_data()))
 
     await FallingEdge(dut.clk) # Check if hold pin is pulled low
-    outputEnable = dut.uio_oe[7].value
+    outputEnable = dut.uio_oe[6].value
     assert outputEnable == 0, f"Expected output enable to be low at end of instruction, got {outputEnable}"
     print("QSPI instruction sent successfully")
 

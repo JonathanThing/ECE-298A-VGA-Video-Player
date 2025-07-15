@@ -19,12 +19,10 @@ module instruction_decoder (
     reg [9:0] run_length;     // Current run length (10 bits)
     reg [9:0] run_counter;    // Counter for current run
     reg [7:0]  current_rgb;    // Current RGB value
-    reg        rgb_valid_reg;  // RGB valid flag
     reg        have_data;      // Flag indicating we have valid data to output
 
     // Output assignments
     assign rgb_out = current_rgb;
-    assign rgb_valid = rgb_valid_reg;
     assign cont_shift = !have_data;
 
     // Main decoder logic - single always block
@@ -33,12 +31,8 @@ module instruction_decoder (
             run_length <= 10'b0;
             run_counter <= 10'b0;
             current_rgb <= 8'b0;
-            rgb_valid_reg <= 1'b0;
             have_data <= 1'b0;
         end else begin
-            // Default: clear valid signal
-            rgb_valid_reg <= 1'b0;
-            
             // Load new instruction
             if (instr_valid) begin
                 run_length <= instruction[17:8];   // Extract run length
@@ -49,7 +43,6 @@ module instruction_decoder (
             
             // Output pixel when requested and we have data
             if (pixel_req && have_data) begin
-                rgb_valid_reg <= 1'b1;             // Assert valid output
                 run_counter <= run_counter + 1;    // Increment run counter
                 
                 // Check if run is complete

@@ -18,8 +18,6 @@ module qspi_controller (
     input  wire        spi_io2,    // IO2
     input  wire        spi_io3,     // IO3/HOLD
 
-
-
     // Output interface
     output wire [17:0] instruction,        // 18-bit data output
     output wire        spi_cs_oe,
