@@ -60,7 +60,7 @@ module tt_um_jonathan_thing_vga (
         .spi_sclk_oe(uio_oe[4]),
         .spi_hold_n_oe(uio_oe[6]),
         .valid(spi_ready),       // High when instruction is valid
-        .shift_data(1)
+        .shift_data(0)
     );
 
     wire [17:0] data_1;
