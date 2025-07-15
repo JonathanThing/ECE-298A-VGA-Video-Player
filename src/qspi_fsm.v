@@ -85,23 +85,27 @@ module qspi_fsm (
     // FSM next state combinational logic
     always @(*) begin
         next_state = cur_state;
+        valid_reg = 1'b0;
         case (cur_state)
             IDLE: begin                         // If Idle, start the transcation
                 next_state = SEND_CMD;
             end
             SEND_CMD: begin                     // Send the 8 bit command
-                if (bit_counter == 7) begin
+                if (bit_counter == 7) begin     // Finish sending the 8 bits
                     next_state = DUMMY_CYCLES;
                 end
             end
             DUMMY_CYCLES: begin                 // Send 32 dummy cycles
-                if (bit_counter == 31) begin
+                if (bit_counter == 31) begin    // Finish sending the dummy cycles
                     next_state = READ_DATA;
                 end
             end
             READ_DATA: begin                    // Read Data, it takes 6 clock cycles to generate one valid data
-                if (bit_counter == 5 && shift_data == 0) begin  // If generated value but not being consumed
-                        next_state = WAIT_CONSUME; 
+                if (bit_counter == 5) begin// If generated value but not being consumed
+                    valid_reg = 1'b1;
+                    if (shift_data == 0) begin
+                        next_state = WAIT_CONSUME;
+                    end 
                 end
             end
             WAIT_CONSUME: begin                 // Wait until consumed then return to getting data
@@ -139,7 +143,6 @@ module qspi_fsm (
     // FSM current state combinational output
     always @(*) begin
         cs_n_reg = 1'b0;
-        valid_reg = 1'b0;
         case (cur_state)
             SEND_CMD: begin
                 oe_sig = 4'b1111;
@@ -169,19 +172,14 @@ module qspi_fsm (
             READ_DATA: begin
                 oe_sig = 4'b1010;
                 pause_sclk = 1'b0;
-                if (bit_counter == 6) begin
-                    valid_reg = 1'b1;
-                end
             end
 
             WAIT_CONSUME: begin
                 oe_sig = 4'b1010;
                 pause_sclk = 1'b1;
-                valid_reg = 1'b1;
             end
 
             default: begin
-                valid_reg = 1'b0;
                 cs_n_reg = 1'b1;
                 di_reg = 1'b0;
                 oe_sig = 4'b0000;
@@ -190,103 +188,5 @@ module qspi_fsm (
             end
         endcase
     end
-
-    // // Main state machine
-
-    // always @(posedge clk) begin
-    //     if (!rst_n) begin
-    //         cur_state <= IDLE;
-    //         bit_counter <= 8'b0;
-    //         instruction_buf <= 24'b0;
-    //         valid_reg <= 1'b0;
-    //         cs_n_reg <= 1'b1;
-    //         di_reg <= 1'b0;
-    //         oe_sig <= 4'b0000;
-    //         hold_n_reg <= 0;
-    //     end else begin
-    //         case (cur_state) SEND_CMD: begin
-    //             cs_n_reg = 0'b0;
-    //             IDLE: begin
-    //                 oe_sig <= 4'b1111;          
-    //                 cs_n_reg <= 1'b1;          // Release chip select
-    //                 bit_counter <= 8'b0;
-    //                 valid_reg <= 1'b0;
-    //                 di_reg <= 1'b0;
-    //                 hold_n_reg <= 1;
-    //                 pause_sclk <= 0;
-    //                 cur_state <= SEND_CMD;   
-    //             end
-                
-    //             SEND_CMD: begin
-    //                 cs_n_reg <= 1'b0;       // Pull CS low
-
-    //                 // Send 8-bit command (6Bh = 01101011) on DI, MSB first
-    //                 case (bit_counter)
-    //                     0: di_reg <= 1'b0;  // bit 7
-    //                     1: di_reg <= 1'b1;  // bit 6
-    //                     2: di_reg <= 1'b1;  // bit 5
-    //                     3: di_reg <= 1'b0;  // bit 4
-    //                     4: di_reg <= 1'b1;  // bit 3
-    //                     5: di_reg <= 1'b0;  // bit 2
-    //                     6: di_reg <= 1'b1;  // bit 1
-    //                     7: di_reg <= 1'b1;  // bit 0
-    //                     default: di_reg <= 1'b0;
-    //                 endcase
-                    
-    //                 bit_counter <= bit_counter + 1;
-
-    //                 // We check 8 and not 7 because the SEND_CMD state starts one bit early
-    //                 if (bit_counter == 8) begin  
-    //                     cur_state <= DUMMY_CYCLES;
-    //                     bit_counter <= 8'b0;
-    //                 end
-    //             end
-                
-    //             DUMMY_CYCLES: begin
-    //                 // Wait for dummy cycles (32 dummy clocks as per datasheet)
-    //                 di_reg <= 1'b0;  // Keep DI low during dummy cycles
-    //                 bit_counter <= bit_counter + 1;
-
-    //                 if (bit_counter == 31) begin  // 31 cycles already occured,
-    //                     oe_sig <= 4'b0101;
-    //                     cur_state <= READ_DATA;
-    //                     bit_counter <= 8'b0;
-    //                 end
-    //             end
-                
-    //             READ_DATA: begin
-                    
-    //                 // Read 24 bits of data (6 cycles of 4 bits each)
-    //                 instruction_reg <= {instruction_reg[19:0], io_in_data};
-    //                 bit_counter <= bit_counter + 1;
-                    
-    //                 if (bit_counter == 5) begin  // 3 bytes received (6 cycles)
-    //                     valid_reg <= 1'b1;
-    //                     bit_counter <= 8'b0;
-    //                     if (!shift_data) begin
-    //                         cur_state <= WAIT_CONSUME;
-    //                     end
-    //                 end else begin
-    //                     valid_reg <= 1'b0;
-    //                 end
-    //             end
-
-    //             WAIT_CONSUME: begin        
-    //                 pause_sclk <= 1'b1;
-    //                 if (shift_data) begin   // Wait for data to be consumed until reading next message
-    //                     cur_state <= READ_DATA;
-    //                     pause_sclk <= 1'b0;
-    //                     bit_counter <= 8'b0;
-    //                 end
-    //             end
-
-    //             default: begin
-    //                 cur_state <= IDLE;
-    //                 oe_sig <= 4'b1101;
-    //                 hold_n_reg <= 0;
-    //             end
-    //         endcase
-    //     end
-    // end
 
 endmodule
