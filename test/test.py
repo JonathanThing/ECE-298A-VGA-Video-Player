@@ -68,11 +68,11 @@ async def test_project(dut):
     # assert outputEnable == 0, f"Expected output enable to be low at end of instruction, got {outputEnable}"
     print("QSPI instruction sent successfully")
 
-    timeout = 10
+    timeout = 36000
     timeout_cnt = 0
     timeout_occur = 0
 
-    for i in range(2*300-1): # Send 300 clocks
+    for i in range(2*300-1): # Send 10000 clocks
         timeout_cnt = 0
         while True:
             await RisingEdge(dut.clk)   

@@ -78,6 +78,7 @@ module qspi_fsm (
             end else if (next_state == READ_DATA && bit_counter == 5) begin      // If instruciton has been read, reset bit counter to read next
                 bit_counter <= 6'b0;
             end
+
             cur_state <= next_state;
         end
     end
@@ -85,7 +86,6 @@ module qspi_fsm (
     // FSM next state combinational logic
     always @(*) begin
         next_state = cur_state;
-        valid_reg = 1'b0;
         case (cur_state)
             IDLE: begin                         // If Idle, start the transcation
                 next_state = SEND_CMD;
@@ -102,7 +102,6 @@ module qspi_fsm (
             end
             READ_DATA: begin                    // Read Data, it takes 6 clock cycles to generate one valid data
                 if (bit_counter == 5) begin// If generated value but not being consumed
-                    valid_reg = 1'b1;
                     if (shift_data == 0) begin
                         next_state = WAIT_CONSUME;
                     end 
@@ -142,6 +141,7 @@ module qspi_fsm (
 
     // FSM current state combinational output
     always @(*) begin
+        valid_reg = 1'b0;
         cs_n_reg = 1'b0;
         case (cur_state)
             SEND_CMD: begin
@@ -172,11 +172,15 @@ module qspi_fsm (
             READ_DATA: begin
                 oe_sig = 4'b1010;
                 pause_sclk = 1'b0;
+                if (bit_counter == 0) begin
+                    valid_reg = 1'b1;
+                end
             end
 
             WAIT_CONSUME: begin
                 oe_sig = 4'b1010;
                 pause_sclk = 1'b1;
+                valid_reg = 1'b1;
             end
 
             default: begin
