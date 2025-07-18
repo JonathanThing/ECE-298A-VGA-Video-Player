@@ -75,14 +75,17 @@ async def test_project(dut):
     for i in range(2*300-1): # Send 10000 clocks
         timeout_cnt = 0
         while True:
-            await RisingEdge(dut.clk)   
+            await RisingEdge(dut.clk)
+            sclk_enabled = (dut.uio_out[4] == 1)
+            await FallingEdge(dut.clk)   
             timeout_cnt += 1
             if (timeout_cnt >= timeout): # Timeout case
                 timeout_occur = 1
                 break
-            if (dut.uio_out[4] == 1):
+            if (sclk_enabled):
                 break
         if (timeout_occur):
+            print("Timeout Occured")
             break
         set_4bit_io(dut, int(qspi_sim.clock_data()))
 

@@ -95,8 +95,8 @@ module vga_module (
                           (h_counter < H_PULSE_END));
             
             // VSYNC: active low during sync period  
-            vsync_reg <= ~(v_counter >= (V_PULSE_START)) && 
-                          (v_counter < (V_PULSE_END));
+            vsync_reg <= ~(v_counter >= (V_PULSE_START) && 
+                          (v_counter < V_PULSE_END));
             
             // RGB output logic
             if (display_area) begin 
