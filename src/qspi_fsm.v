@@ -170,7 +170,8 @@ module qspi_fsm (
             end
 
             READ_DATA: begin
-                oe_sig = 4'b1010;
+                oe_sig = 4'b0010;
+                hold_n_reg = 1'b0; 
                 pause_sclk = 1'b0;
                 if (bit_counter == 0) begin
                     valid_reg = 1'b1;
@@ -178,7 +179,8 @@ module qspi_fsm (
             end
 
             WAIT_CONSUME: begin
-                oe_sig = 4'b1010;
+                hold_n_reg = 1'b0; 
+                oe_sig = 4'b0010;
                 pause_sclk = 1'b1;
                 valid_reg = 1'b1;
             end

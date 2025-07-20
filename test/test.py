@@ -55,17 +55,15 @@ async def test_project(dut):
         # Check if hold pin is held high
         outputEnable = dut.uio_oe[6].value
         dataOutput = dut.uio_out[6].value
-        # assert outputEnable == 1, f"Expected output enable to be high at bit {i}, got {outputEnable}"
-        # assert dataOutput == 1, f"Expected hold pin to be high at bit {i}, got {dataOutput}"
+        assert outputEnable == 1, f"Expected output enable to be high at bit {i}, got {outputEnable}"
+        assert dataOutput == 1, f"Expected hold pin to be high at bit {i}, got {dataOutput}"
         if (i < 31):
             await FallingEdge(dut.clk)
 
-    await RisingEdge(dut.clk)  # Send the simulated flash IC Data
+    await FallingEdge(dut.clk)  # Send the simulated flash IC Data
     set_4bit_io(dut, int(qspi_sim.clock_data()))
-
-    await FallingEdge(dut.clk) # Check if hold pin is pulled low
     outputEnable = dut.uio_oe[6].value
-    # assert outputEnable == 0, f"Expected output enable to be low at end of instruction, got {outputEnable}"
+    assert outputEnable == 0, f"Expected output enable to be low at end of instruction, got {outputEnable}"
     print("QSPI instruction sent successfully")
 
     timeout = 36000
