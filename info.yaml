@@ -20,7 +20,6 @@ project:
     - "project.v"
     - "instruction_decoder.v"
     - "data_buffer.v"
-    - "qspi_controller.v"
     - "vga_module.v"
     - "qspi_fsm.v"
 

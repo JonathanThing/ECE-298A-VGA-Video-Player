@@ -76,6 +76,7 @@ async def test_project(dut):
             await RisingEdge(dut.clk)
             sclk_enabled = (dut.uio_out[4] == 1)
             await FallingEdge(dut.clk)   
+            set_4bit_io(dut, 0);
             timeout_cnt += 1
             if (timeout_cnt >= timeout): # Timeout case
                 timeout_occur = 1

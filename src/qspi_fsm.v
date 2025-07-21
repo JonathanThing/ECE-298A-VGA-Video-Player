@@ -1,6 +1,6 @@
 /*
- * QSPI FSM
- * FSM to control the Flash memory through QSPI
+ * QSPI FSM Module
+ * FSM to control reading from external flash memory through QSPI
  */
 
 module qspi_fsm (
@@ -14,11 +14,11 @@ module qspi_fsm (
     output wire        spi_hold_n,   // HOLD (We have to hold it high during setup)
 
     // Input Wires
-    input  wire        spi_io0,    // IO0 (for quad read)
-    input  wire        spi_io1,     // DO (data output from flash) - IO1
-    input  wire        spi_io2,    // IO2
-    input  wire        spi_io3,     // IO3/HOLD
-    input  wire        shift_data,  // Shift data through the buffers
+    input  wire        spi_io0,         // IO0 (for quad read)
+    input  wire        spi_io1,         // DO (data output from flash) - IO1
+    input  wire        spi_io2,         // IO2
+    input  wire        spi_io3,         // IO3/HOLD
+    input  wire        shift_data,      // Signal to have data shifted 
 
     // Output interface
     output wire [17:0] instruction,        // 18-bit data output
@@ -30,11 +30,11 @@ module qspi_fsm (
 );
 
     // State machine states
-    localparam IDLE         = 3'b000;
+    localparam IDLE         = 3'b100;
     localparam SEND_CMD     = 3'b001;
     localparam DUMMY_CYCLES = 3'b010;
     localparam READ_DATA    = 3'b011;
-    localparam WAIT_CONSUME = 3'b100;
+    localparam WAIT_CONSUME = 3'b101;
 
     // Internal signals
     reg [2:0]  cur_state;
@@ -46,13 +46,12 @@ module qspi_fsm (
     reg        cs_n_reg;
     reg        di_reg;      // Data Input value
     reg [3:0]  oe_sig;      // 1 for output; 0 for input
-    reg        hold_n_reg;  // IO3 Hold register value      // Theoretically can omit
-    reg        pause_sclk;   // Pause SCLK value
-    
+    reg        hold_n_reg;  // IO3 Hold register value 
+
     wire [3:0] io_in_data;  
 
     // SPI clock is inverted system clock
-    assign spi_clk = !clk & !pause_sclk;
+    assign spi_clk = !clk & !cur_state[2]; // Inverted Clk only if not waiting for data
     assign spi_cs_n = cs_n_reg;
     assign spi_di = di_reg;
     assign spi_hold_n = hold_n_reg;
@@ -68,131 +67,134 @@ module qspi_fsm (
     assign spi_sclk_oe = oe_sig[2];
     assign spi_hold_n_oe = oe_sig[3];
 
-    // FSM next state sequential logic
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            cur_state <= IDLE;
-        end else begin
-            if (cur_state != next_state) begin  // Changing state, reset bit counter
-                bit_counter <= 6'b0;
-            end else if (next_state == READ_DATA && bit_counter == 5) begin      // If instruciton has been read, reset bit counter to read next
-                bit_counter <= 6'b0;
-            end
-
-            cur_state <= next_state;
-        end
-    end
+    wire read_data = (cur_state == READ_DATA) || 
+                (cur_state == READ_DATA && next_state == WAIT_CONSUME);
 
     // FSM next state combinational logic
     always @(*) begin
         next_state = cur_state;
         case (cur_state)
-            IDLE: begin                         // If Idle, start the transcation
-                next_state = SEND_CMD;
-            end
-            SEND_CMD: begin                     // Send the 8 bit command
-                if (bit_counter == 7) begin     // Finish sending the 8 bits
-                    next_state = DUMMY_CYCLES;
-                end
-            end
-            DUMMY_CYCLES: begin                 // Send 32 dummy cycles
-                if (bit_counter == 31) begin    // Finish sending the dummy cycles
-                    next_state = READ_DATA;
-                end
-            end
-            READ_DATA: begin                    // Read Data, it takes 6 clock cycles to generate one valid data
-                if (bit_counter == 5) begin// If generated value but not being consumed
-                    if (shift_data == 0) begin
-                        next_state = WAIT_CONSUME;
-                    end 
-                end
-            end
-            WAIT_CONSUME: begin                 // Wait until consumed then return to getting data
-                if (shift_data == 1) begin
-                    next_state = READ_DATA;
-                end 
-            end
-            default: begin
-                next_state = IDLE;
-            end
+            IDLE:           next_state = SEND_CMD;                                              // Start the process by sending command
+            SEND_CMD:       if (bit_counter == 7) next_state = DUMMY_CYCLES;                    // Once done sending command, start sending dummy cycles
+            DUMMY_CYCLES:   if (bit_counter == 31)  next_state = READ_DATA;                     // Once done sending the 32 dummy cycles, start reading data
+            READ_DATA:      if (bit_counter == 5 && shift_data == 0) next_state = WAIT_CONSUME; // After reading message, if the data is not to be shifted, wait
+            WAIT_CONSUME:   if (shift_data == 1) next_state = READ_DATA;                        // Once data is shifted, start reading data again
+            default:        next_state = IDLE;
         endcase
     end
 
-    // FSM current state sequential logic
+    // Update Next State
     always @(posedge clk) begin
         if (!rst_n) begin
-            bit_counter <= 6'b0;
-            instruction_buf <= 24'b0;
+            cur_state <= IDLE;
         end else begin
+            cur_state <= next_state; 
+        end
+    end
+
+    // Update Bit Counter
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            bit_counter <= 0;
+        end else if (cur_state != next_state) begin 
+            bit_counter <= 0; // State Change
+        end else begin          
             case (cur_state)
                 SEND_CMD, DUMMY_CYCLES: begin
                     bit_counter <= bit_counter + 1;
                 end
                 READ_DATA: begin
-                    instruction_buf <= {instruction_buf[19:0], io_in_data};
                     bit_counter <= bit_counter + 1;
+                    if (bit_counter == 5) begin
+                        bit_counter <= 0;
+                        valid_reg <= 1'b1;
+                    end else begin
+                        valid_reg <= 1'b0;
+                    end
                 end
+                WAIT_CONSUME: begin
+                    valid_reg <= 1'b1;
+                end
+
                 default: begin
-                    bit_counter <= 6'b0;
+                    bit_counter <= 0;
+                    valid_reg <= 1'b0;
+                end
+
+            endcase
+        end
+    end
+
+    // Output
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            cs_n_reg <= 1'b1;
+            oe_sig <= 4'b1111;
+            hold_n_reg <= 1'b1;
+            di_reg <= 1'b0;
+            valid_reg <= 1'b0;
+        end else begin
+            case (cur_state)
+                IDLE: begin
+                    valid_reg <= 1'b0;
+                    cs_n_reg <= 1'b1;
+                    oe_sig <= 4'b1111;
+                    hold_n_reg <= 1'b1;
+                    di_reg <= 1'b0;
+                end
+                SEND_CMD: begin
+                    valid_reg <= 1'b0;
+                    cs_n_reg <= 1'b0;
+                    oe_sig <= 4'b1111;
+                    hold_n_reg <= 1'b1; 
+                    case (bit_counter)
+                        0: di_reg <= 1'b0;  // bit 7
+                        1: di_reg <= 1'b1;  // bit 6
+                        2: di_reg <= 1'b1;  // bit 5
+                        3: di_reg <= 1'b0;  // bit 4
+                        4: di_reg <= 1'b1;  // bit 3
+                        5: di_reg <= 1'b0;  // bit 2
+                        6: di_reg <= 1'b1;  // bit 1
+                        7: di_reg <= 1'b1;  // bit 0
+                        default: di_reg <= 1'b0;
+                    endcase
+                end
+                DUMMY_CYCLES: begin
+                    valid_reg <= 1'b0;
+                    cs_n_reg <= 1'b0;
+                    oe_sig <= 4'b1111;
+                    hold_n_reg <= 1'b1;
+                    di_reg <= 1'b0;
+                end
+                READ_DATA: begin
+                    cs_n_reg <= 1'b0;
+                    oe_sig <= 4'b0100;  
+                    hold_n_reg <= 1'b0; 
+                end 
+                WAIT_CONSUME: begin
+                    valid_reg <= 1'b1;
+                    cs_n_reg <= 1'b0;
+                    oe_sig <= 4'b0100;  
+                    hold_n_reg <= 1'b0; 
+                end 
+                default: begin
+                    valid_reg <= 1'b0;
+                    cs_n_reg <= 1'b1;
+                    oe_sig <= 4'b1111;
+                    hold_n_reg <= 1'b1;
+                    di_reg <= 1'b0;
                 end
             endcase
         end
     end
 
-    // FSM current state combinational output
-    always @(*) begin
-        valid_reg = 1'b0;
-        cs_n_reg = 1'b0;
-        case (cur_state)
-            SEND_CMD: begin
-                oe_sig = 4'b1111;
-                hold_n_reg = 1'b1;
-                pause_sclk = 1'b0;
-
-                case (bit_counter)
-                    0: di_reg = 1'b0;  // bit 7
-                    1: di_reg = 1'b1;  // bit 6
-                    2: di_reg = 1'b1;  // bit 5
-                    3: di_reg = 1'b0;  // bit 4
-                    4: di_reg = 1'b1;  // bit 3
-                    5: di_reg = 1'b0;  // bit 2
-                    6: di_reg = 1'b1;  // bit 1
-                    7: di_reg = 1'b1;  // bit 0
-                    default: di_reg = 1'b0;
-                endcase
-            end
-
-            DUMMY_CYCLES: begin
-                oe_sig = 4'b1111;
-                hold_n_reg = 1'b1;
-                pause_sclk = 1'b0;
-                di_reg = 1'b0;
-            end
-
-            READ_DATA: begin
-                oe_sig = 4'b0010;
-                hold_n_reg = 1'b0; 
-                pause_sclk = 1'b0;
-                if (bit_counter == 0) begin
-                    valid_reg = 1'b1;
-                end
-            end
-
-            WAIT_CONSUME: begin
-                hold_n_reg = 1'b0; 
-                oe_sig = 4'b0010;
-                pause_sclk = 1'b1;
-                valid_reg = 1'b1;
-            end
-
-            default: begin
-                cs_n_reg = 1'b1;
-                di_reg = 1'b0;
-                oe_sig = 4'b0000;
-                hold_n_reg = 1'b0;
-                pause_sclk = 1'b0;
-            end
-        endcase
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            instruction_buf <= 24'b0;
+        end else begin 
+            if (read_data) begin
+                instruction_buf <= {instruction_buf[19:0], io_in_data};
+            end 
+        end
     end
-
 endmodule
