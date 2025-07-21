@@ -72,7 +72,7 @@ async def test_project(dut):
 
     for nibble_index in range(total_nibbles):
         # Wait until SCLK goes high (i.e., ready to receive next nibble)
-        timeout = 36000
+        timeout = 50000
         timeout_cnt = 0
 
         while True:

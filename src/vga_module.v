@@ -53,7 +53,7 @@ module vga_module (
     // Determine if in display area
     assign h_display_area = (h_counter < H_DISPLAY-1); 
     assign v_display_area = (v_counter < V_DISPLAY);
-    assign h_edge_case = (h_counter == H_TOTAL - 1) && v_display_area;  // The clock cycle before start of new line
+    assign h_edge_case = (h_counter == H_TOTAL - 1) && (v_counter < V_DISPLAY - 1);  // The clock cycle before start of new line
     assign v_edge_case = (h_counter == H_TOTAL - 1) && (v_counter == V_TOTAL - 1);  // The clock cycle before start of frame
     assign display_area = h_display_area && v_display_area || v_edge_case || h_edge_case;
     

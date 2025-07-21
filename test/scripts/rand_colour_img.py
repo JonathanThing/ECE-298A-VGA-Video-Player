@@ -1,7 +1,7 @@
 from PIL import Image
 import random
 
-width, height = 640, 480
+width, height = 640, 960
 block_heights = 40
 block_widths = [40, 5, 5]  # alternating widths
 
