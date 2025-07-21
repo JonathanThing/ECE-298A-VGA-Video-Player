@@ -32,12 +32,14 @@ module tt_um_jonathan_thing_vga (
 
     wire spi_ready;
     wire [17:0] spi_data;
-    wire spi_active;
+    //wire spi_active;
 
-    wire decode_allow_shift;
+    //wire decode_allow_shift;
 
     assign uio_oe[5] = 0;
     assign uio_out[5] = 0;
+    assign uio_oe[7] = 0;
+    assign uio_out[7] = 0;
 
     assign uio_oe[1:0] = 2'b11;
 
@@ -119,7 +121,7 @@ module tt_um_jonathan_thing_vga (
         .empty(data_4_empty)
     );
 
-    wire [7:0] colour_in;
+    //wire [7:0] colour_in;
     wire req_next_pix;
 
     instruction_decoder decoder(
@@ -127,7 +129,7 @@ module tt_um_jonathan_thing_vga (
         .rst_n(rst_n),
 
         .instruction(data_4),
-        .instr_valid(!data_4_empty),
+        //.instr_valid(!data_4_empty),
         .pixel_req(req_next_pix),
         
         .cont_shift(global_shift),
@@ -140,7 +142,7 @@ module tt_um_jonathan_thing_vga (
         .clk(clk),
         .rst_n(rst_n),
 
-        .rgb_in(colour_in),
+        //.rgb_in(colour_in),
         
         .hsync(uio_out[0]),
         .vsync(uio_out[1]),

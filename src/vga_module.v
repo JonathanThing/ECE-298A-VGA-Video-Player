@@ -7,7 +7,7 @@
 module vga_module (
     input  wire       clk,        // 25MHz pixel clock
     input  wire       rst_n,      // Reset (active low)
-    input  wire [7:0] rgb_in,     // 8-bit RGB input (RRRGGGBB)
+    //input  wire [7:0] rgb_in,     // 8-bit RGB input (RRRGGGBB)
 
     output wire       hsync,      // Horizontal sync
     output wire       vsync,      // Vertical sync

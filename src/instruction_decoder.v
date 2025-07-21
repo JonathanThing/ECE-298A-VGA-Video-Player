@@ -8,7 +8,7 @@ module instruction_decoder (
     input  wire         clk,           // Clock
     input  wire         rst_n,         // Reset (active low)
     input  wire [17:0]  instruction,   // Only need 18 bits for instruction
-    input  wire         instr_valid,   // High when instruction is valid
+    //input  wire         instr_valid,   // High when instruction is valid
     input  wire         pixel_req,     // Request for next pixel from VGA
     
     output wire         cont_shift,
@@ -20,7 +20,7 @@ module instruction_decoder (
     // Internal registers
     reg [9:0] run_length;     // Current run length (10 bits)
     reg [9:0] run_counter;    // Counter for current run
-    reg [7:0]  current_rgb;    // Current RGB value
+    //reg [7:0]  current_rgb;    // Current RGB value
     reg        have_data;      // Flag indicating we have valid data to output
 
     reg [2:0] red_reg;

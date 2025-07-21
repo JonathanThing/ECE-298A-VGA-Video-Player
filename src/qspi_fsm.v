@@ -86,6 +86,7 @@ module qspi_fsm (
             cur_state <= IDLE;
             bit_counter <= 0;
             valid_reg <= 1'b0;
+            di_reg <= 1'b0;
         end else begin
             cur_state <= next_state; 
 
@@ -98,6 +99,9 @@ module qspi_fsm (
                 end
             end else begin                      // State Continue
                 case (next_state)
+                    IDLE: begin
+                        di_reg <= 1'b0;
+                    end
                     SEND_CMD: begin
                         bit_counter <= bit_counter + 1;
                         case (bit_counter)      // Get next value given current bit
@@ -114,6 +118,7 @@ module qspi_fsm (
 
                     DUMMY_CYCLES: begin   
                         bit_counter <= bit_counter + 1;
+                        di_reg <= 1'b0;
                     end
 
                     READ_DATA: begin
@@ -128,6 +133,7 @@ module qspi_fsm (
 
                     default: begin
                         bit_counter <= 0;
+                        di_reg <= 1'b0;
                     end
                 endcase
             end
@@ -139,7 +145,6 @@ module qspi_fsm (
         if (!rst_n) begin
             oe_sig <= 4'b1111;
             hold_n_reg <= 1'b1;
-            di_reg <= 1'b0;
             cs_n_reg <= 1'b1;
         end else begin
             case (next_state)
@@ -147,7 +152,6 @@ module qspi_fsm (
                     cs_n_reg <= 1'b1;
                     oe_sig <= 4'b1111;
                     hold_n_reg <= 1'b1;
-                    di_reg <= 1'b0;
                 end
                 SEND_CMD: begin
                     cs_n_reg <= 1'b0;
@@ -158,7 +162,6 @@ module qspi_fsm (
                     cs_n_reg <= 1'b0;
                     oe_sig <= 4'b1111;
                     hold_n_reg <= 1'b1;
-                    di_reg <= 1'b0;
                 end
                 READ_DATA, WAIT_CONSUME: begin
                     cs_n_reg <= 1'b0;
@@ -169,7 +172,6 @@ module qspi_fsm (
                     cs_n_reg <= 1'b1;
                     oe_sig <= 4'b1111;
                     hold_n_reg <= 1'b1;
-                    di_reg <= 1'b0;
                 end
             endcase
         end
@@ -184,4 +186,6 @@ module qspi_fsm (
             end 
         end
     end
+
+    wire _unused = &{instruction_buf[23:20]};
 endmodule
