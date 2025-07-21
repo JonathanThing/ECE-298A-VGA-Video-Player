@@ -67,9 +67,6 @@ module qspi_fsm (
     assign spi_sclk_oe = oe_sig[2];
     assign spi_hold_n_oe = oe_sig[3];
 
-    wire read_data = (cur_state == READ_DATA) || 
-                (cur_state == READ_DATA && next_state == WAIT_CONSUME);
-
     // FSM next state combinational logic
     always @(*) begin
         next_state = cur_state;
@@ -83,84 +80,98 @@ module qspi_fsm (
         endcase
     end
 
-    // Update Next State
+    // Next State Logic
     always @(posedge clk) begin
         if (!rst_n) begin
             cur_state <= IDLE;
-        end else begin
-            cur_state <= next_state; 
-        end
-    end
-
-    // Update Bit Counter
-    always @(posedge clk) begin
-        if (!rst_n) begin
             bit_counter <= 0;
-        end else if (cur_state != next_state) begin 
-            bit_counter <= 0; // State Change
-        end else begin          
-            case (cur_state)
-                SEND_CMD, DUMMY_CYCLES: begin
-                    bit_counter <= bit_counter + 1;
-                end
-                READ_DATA: begin
-                    bit_counter <= bit_counter + 1;
-                    if (bit_counter == 5) begin
-                        bit_counter <= 0;
-                        valid_reg <= 1'b1;
-                    end else begin
-                        valid_reg <= 1'b0;
+            cs_n_reg <= 1'b1;
+            di_reg <= 1'b0;
+            valid_reg <= 1'b0;
+        end else begin
+            if (next_state != cur_state) begin  // State transition
+                bit_counter <= 0;
+                di_reg <= 1'b0;
+                case (next_state)
+                    IDLE: begin
+
                     end
-                end
-                WAIT_CONSUME: begin
-                    valid_reg <= 1'b1;
-                end
+                    SEND_CMD: begin
+                        cs_n_reg <= 1'b0;
+                    end
+                    DUMMY_CYCLES: begin
+                        cs_n_reg <= 1'b0;
+                    end
+                    READ_DATA: begin
+                        cs_n_reg <= 1'b0;
+                    end
+                    WAIT_CONSUME: begin
+                        cs_n_reg <= 1'b0;
+                        valid_reg <= 1'b1;
+                    end
+                    default: begin
+                        cs_n_reg <= 1'b1;
+                    end
+                endcase
 
-                default: begin
-                    bit_counter <= 0;
-                    valid_reg <= 1'b0;
-                end
+            end else begin                      // State Continue
+                case (next_state)
+                    SEND_CMD: begin
+                    case (bit_counter)      // Get next value given current bit
+                        0: di_reg <= 1'b1;  // bit 6
+                        1: di_reg <= 1'b1;  // bit 5
+                        2: di_reg <= 1'b0;  // bit 4
+                        3: di_reg <= 1'b1;  // bit 3
+                        4: di_reg <= 1'b0;  // bit 2
+                        5: di_reg <= 1'b1;  // bit 1
+                        6: di_reg <= 1'b1;  // bit 0
+                        default: di_reg <= 1'b0;
+                    endcase    
+                        bit_counter <= bit_counter + 1;
+                    end
+                    DUMMY_CYCLES: begin   
+                        bit_counter <= bit_counter + 1;
+                    end
+                    READ_DATA: begin
+                        if (bit_counter == 5) begin // Reset if one message done
+                            bit_counter <= 0;
+                            valid_reg <= 1'b1;
+                        end else begin
+                            valid_reg <= 1'b0;
+                            bit_counter <= bit_counter + 1;
+                        end
+                    end
+                    default: begin
+                        bit_counter <= 0;
+                    end
+                endcase
+            end
 
-            endcase
+            cur_state <= next_state; 
         end
     end
 
     // Output
     always @(posedge clk) begin
         if (!rst_n) begin
-            cs_n_reg <= 1'b1;
             oe_sig <= 4'b1111;
             hold_n_reg <= 1'b1;
             di_reg <= 1'b0;
-            valid_reg <= 1'b0;
         end else begin
-            case (cur_state)
+            case (next_state)
                 IDLE: begin
-                    valid_reg <= 1'b0;
                     cs_n_reg <= 1'b1;
                     oe_sig <= 4'b1111;
                     hold_n_reg <= 1'b1;
                     di_reg <= 1'b0;
                 end
                 SEND_CMD: begin
-                    valid_reg <= 1'b0;
                     cs_n_reg <= 1'b0;
                     oe_sig <= 4'b1111;
                     hold_n_reg <= 1'b1; 
-                    case (bit_counter)
-                        0: di_reg <= 1'b0;  // bit 7
-                        1: di_reg <= 1'b1;  // bit 6
-                        2: di_reg <= 1'b1;  // bit 5
-                        3: di_reg <= 1'b0;  // bit 4
-                        4: di_reg <= 1'b1;  // bit 3
-                        5: di_reg <= 1'b0;  // bit 2
-                        6: di_reg <= 1'b1;  // bit 1
-                        7: di_reg <= 1'b1;  // bit 0
-                        default: di_reg <= 1'b0;
-                    endcase
+
                 end
                 DUMMY_CYCLES: begin
-                    valid_reg <= 1'b0;
                     cs_n_reg <= 1'b0;
                     oe_sig <= 4'b1111;
                     hold_n_reg <= 1'b1;
@@ -172,13 +183,11 @@ module qspi_fsm (
                     hold_n_reg <= 1'b0; 
                 end 
                 WAIT_CONSUME: begin
-                    valid_reg <= 1'b1;
                     cs_n_reg <= 1'b0;
                     oe_sig <= 4'b0100;  
                     hold_n_reg <= 1'b0; 
                 end 
                 default: begin
-                    valid_reg <= 1'b0;
                     cs_n_reg <= 1'b1;
                     oe_sig <= 4'b1111;
                     hold_n_reg <= 1'b1;
@@ -192,7 +201,7 @@ module qspi_fsm (
         if (!rst_n) begin
             instruction_buf <= 24'b0;
         end else begin 
-            if (read_data) begin
+            if (cur_state == READ_DATA) begin
                 instruction_buf <= {instruction_buf[19:0], io_in_data};
             end 
         end
