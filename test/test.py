@@ -64,29 +64,35 @@ async def test_project(dut):
     set_4bit_io(dut, int(qspi_sim.clock_data()))
     outputEnable = dut.uio_oe[6].value
     assert outputEnable == 0, f"Expected output enable to be low at end of instruction, got {outputEnable}"
-    print("QSPI instruction sent successfully")
+    dut._log.info("QSPI instruction sent successfully")
 
-    timeout = 36000
-    timeout_cnt = 0
-    timeout_occur = 0
+    with open("resources/data.bin", "rb") as f:
+        data = f.read()
+    total_nibbles = len(data) * 2
 
-    for i in range(2*300-1): # Send 10000 clocks
+    for nibble_index in range(total_nibbles):
+        # Wait until SCLK goes high (i.e., ready to receive next nibble)
+        timeout = 36000
         timeout_cnt = 0
+
         while True:
             await RisingEdge(dut.clk)
             sclk_enabled = (dut.uio_out[4] == 1)
-            await FallingEdge(dut.clk)   
-            set_4bit_io(dut, 0);
+            await FallingEdge(dut.clk)
+            set_4bit_io(dut, 0)
+
+            if sclk_enabled:
+                break
+
             timeout_cnt += 1
-            if (timeout_cnt >= timeout): # Timeout case
-                timeout_occur = 1
-                break
-            if (sclk_enabled):
-                break
-        if (timeout_occur):
-            print("Timeout Occured")
-            break
+            if timeout_cnt >= timeout:
+                raise cocotb.result.TestFailure(f"Timeout waiting for SCLK on nibble {nibble_index}")
+
+        # Provide next nibble of data
         set_4bit_io(dut, int(qspi_sim.clock_data()))
+
+    dut._log.info("All data from data.bin successfully streamed.")
+
 
     assert True
 

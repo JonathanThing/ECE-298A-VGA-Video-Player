@@ -85,69 +85,52 @@ module qspi_fsm (
         if (!rst_n) begin
             cur_state <= IDLE;
             bit_counter <= 0;
-            cs_n_reg <= 1'b1;
-            di_reg <= 1'b0;
             valid_reg <= 1'b0;
         end else begin
-            if (next_state != cur_state) begin  // State transition
+            cur_state <= next_state; 
+
+            // State transition
+            if (next_state != cur_state) begin  
                 bit_counter <= 0;
                 di_reg <= 1'b0;
-                case (next_state)
-                    IDLE: begin
-
-                    end
-                    SEND_CMD: begin
-                        cs_n_reg <= 1'b0;
-                    end
-                    DUMMY_CYCLES: begin
-                        cs_n_reg <= 1'b0;
-                    end
-                    READ_DATA: begin
-                        cs_n_reg <= 1'b0;
-                    end
-                    WAIT_CONSUME: begin
-                        cs_n_reg <= 1'b0;
-                        valid_reg <= 1'b1;
-                    end
-                    default: begin
-                        cs_n_reg <= 1'b1;
-                    end
-                endcase
-
+                if (next_state == WAIT_CONSUME) begin
+                    valid_reg <= 1'b1;
+                end
             end else begin                      // State Continue
                 case (next_state)
                     SEND_CMD: begin
-                    case (bit_counter)      // Get next value given current bit
-                        0: di_reg <= 1'b1;  // bit 6
-                        1: di_reg <= 1'b1;  // bit 5
-                        2: di_reg <= 1'b0;  // bit 4
-                        3: di_reg <= 1'b1;  // bit 3
-                        4: di_reg <= 1'b0;  // bit 2
-                        5: di_reg <= 1'b1;  // bit 1
-                        6: di_reg <= 1'b1;  // bit 0
-                        default: di_reg <= 1'b0;
-                    endcase    
                         bit_counter <= bit_counter + 1;
+                        case (bit_counter)      // Get next value given current bit
+                            0: di_reg <= 1'b1;  // bit 6
+                            1: di_reg <= 1'b1;  // bit 5
+                            2: di_reg <= 1'b0;  // bit 4
+                            3: di_reg <= 1'b1;  // bit 3
+                            4: di_reg <= 1'b0;  // bit 2
+                            5: di_reg <= 1'b1;  // bit 1
+                            6: di_reg <= 1'b1;  // bit 0
+                            default: di_reg <= 1'b0;
+                        endcase    
                     end
+
                     DUMMY_CYCLES: begin   
                         bit_counter <= bit_counter + 1;
                     end
+
                     READ_DATA: begin
                         if (bit_counter == 5) begin // Reset if one message done
                             bit_counter <= 0;
                             valid_reg <= 1'b1;
                         end else begin
-                            valid_reg <= 1'b0;
                             bit_counter <= bit_counter + 1;
+                            valid_reg <= 1'b0;
                         end
                     end
+
                     default: begin
                         bit_counter <= 0;
                     end
                 endcase
             end
-
-            cur_state <= next_state; 
         end
     end
 
@@ -157,6 +140,7 @@ module qspi_fsm (
             oe_sig <= 4'b1111;
             hold_n_reg <= 1'b1;
             di_reg <= 1'b0;
+            cs_n_reg <= 1'b1;
         end else begin
             case (next_state)
                 IDLE: begin
@@ -169,7 +153,6 @@ module qspi_fsm (
                     cs_n_reg <= 1'b0;
                     oe_sig <= 4'b1111;
                     hold_n_reg <= 1'b1; 
-
                 end
                 DUMMY_CYCLES: begin
                     cs_n_reg <= 1'b0;
@@ -177,12 +160,7 @@ module qspi_fsm (
                     hold_n_reg <= 1'b1;
                     di_reg <= 1'b0;
                 end
-                READ_DATA: begin
-                    cs_n_reg <= 1'b0;
-                    oe_sig <= 4'b0100;  
-                    hold_n_reg <= 1'b0; 
-                end 
-                WAIT_CONSUME: begin
+                READ_DATA, WAIT_CONSUME: begin
                     cs_n_reg <= 1'b0;
                     oe_sig <= 4'b0100;  
                     hold_n_reg <= 1'b0; 
