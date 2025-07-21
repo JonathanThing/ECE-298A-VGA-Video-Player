@@ -129,12 +129,12 @@ module tt_um_jonathan_thing_vga (
         .instruction(data_4),
         .instr_valid(!data_4_empty),
         .pixel_req(req_next_pix),
-
-        .rgb_out(colour_in),
-        .cont_shift(decode_allow_shift)
+        
+        .cont_shift(global_shift),
+        .red(uo_out[2:0]),
+        .green(uo_out[5:3]),
+        .blue(uo_out[7:6])
     );
-
-    assign global_shift = decode_allow_shift; // Shift is there is no data in decoder
 
     vga_module vga_inst(
         .clk(clk),
@@ -144,9 +144,6 @@ module tt_um_jonathan_thing_vga (
         
         .hsync(uio_out[0]),
         .vsync(uio_out[1]),
-        .red(uo_out[2:0]),
-        .green(uo_out[5:3]),
-        .blue(uo_out[7:6]),
         .pixel_req(req_next_pix)
     );
     
