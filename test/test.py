@@ -92,7 +92,9 @@ async def test_project(dut):
         set_4bit_io(dut, int(qspi_sim.clock_data()))
 
     dut._log.info("All data from data.bin successfully streamed.")
-
+    await FallingEdge(dut.clk)
+    set_4bit_io(dut, 0)
+    await ClockCycles(dut.clk, 1000)
 
     assert True
 

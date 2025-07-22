@@ -1,9 +1,9 @@
 from PIL import Image
 import random
 
-width, height = 640, 960
+width, height = 640, 480
 block_heights = 40
-block_widths = [40, 5, 5]  # alternating widths
+block_widths = [12, 3, 3]  # alternating widths
 
 # Color mapping functions
 def map_3bit_to_8bit(val):

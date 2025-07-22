@@ -76,6 +76,11 @@ def encode_rle(image_path, output_path):
         
         i += run_length
     
+    # Add stop message instruction: 0x500
+    stop_instruction = 0x500
+    stop_bytes = struct.pack('>I', stop_instruction)[1:]
+    rle_data.append(stop_bytes)
+
     # Write RLE data to file
     with open(output_path, 'wb') as f:
         for instruction in rle_data:
