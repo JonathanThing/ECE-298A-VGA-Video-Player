@@ -2,8 +2,6 @@
 """
 VGA Test File Generator - Creates sample VGA output for testing the parser
 Generates both full timing and visible-only test files, plus reference images
-
-NOTE: IT IS NORMAL IF THE SAMPLE/REFERENCE IMAGE IS MORE SMOOTH THAN THE ONE YOU END UP GENERATING FROM THE SIMULATOR
 """
 
 import os
@@ -68,9 +66,7 @@ def generate_test_pattern(width=640, height=480):
                 # Cyan square
                 r, g, b = 0, 255, 255
             
-            # Add a white border
-            if x < 5 or x >= width - 5 or y < 5 or y >= height - 5:
-                r, g, b = 255, 255, 255
+
             
             # Store RGB values for reference image
             rgb_array[y, x] = [r, g, b]
@@ -145,8 +141,8 @@ def main():
     full_file = generate_full_timing_file()
     
     print("\nTest files created!")
-    print(f"Test with: python vga_simulator.py {visible_file}")
-    print(f"Test with: python vga_simulator.py {full_file}")
+    print(f"Test with: python vga_parser.py {visible_file}")
+    print(f"Test with: python vga_parser.py {full_file}")
     
     print("\nReference images created:")
     print("- test_visible_reference.png (original quality)")
@@ -155,7 +151,6 @@ def main():
     print("\nThe test pattern includes:")
     print("- Rainbow gradient background")
     print("- Colored squares (red, green, blue, yellow, magenta, cyan)")
-    print("- White border around the edge")
     
     print("\nCompare the parser output with the reference images to verify correctness!")
     print("Note: Parser output may have slightly different colors due to VGA format limitations.")

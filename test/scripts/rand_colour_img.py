@@ -2,56 +2,55 @@ from PIL import Image
 import random
 
 width, height = 640, 480
-block_size = 40
+block_heights = 40
+block_widths = [12, 3, 3]  # alternating widths
 
-blocks_x = width // block_size 
-blocks_y = height // block_size 
-total_blocks = blocks_x * blocks_y 
-
+# Color mapping functions
 def map_3bit_to_8bit(val):
     return int((val / 7) * 255)
 
-def map_8bit_to_3bit(val):
-    return int((val / 255) * 7)
-
-# Common colours
+# Common RGB colors
 common_colors = [
-    (255, 0, 0),   # Red
-    (0, 255, 0),   # Green
-    (0, 0, 255),   # Blue
-    (255, 255, 0), # Yellow
-    (255, 165, 0), # Orange
-    (128, 0, 128), # Purple
-    (0, 255, 255), # Cyan
-    (192, 192, 192), # Silver
-    (0, 0, 0),     # Black
-    (255, 255, 255) # White
+    (255, 0, 0), (0, 255, 0), (0, 0, 255),
+    (255, 255, 0), (255, 165, 0), (128, 0, 128),
+    (0, 255, 255), (192, 192, 192), (0, 0, 0), (255, 255, 255)
 ]
 
-# Generate all possible 3 bit RGB colours
+# Generate all possible 3-bit RGB colors
 colors_3bit = [(r, g, b) for r in range(8) for g in range(8) for b in range(8)]
-
-# Generate 8 bit values of colours
 colors_8bit = [(map_3bit_to_8bit(r), map_3bit_to_8bit(g), map_3bit_to_8bit(b)) for r, g, b in colors_3bit]
 
-# Select random sample of colours
-random_colors = random.sample(colors_8bit, total_blocks - len(common_colors))
-
-# Add the common colors to start of the list
-random_colors = common_colors + random_colors
-
+# Initialize image
 img = Image.new("RGB", (width, height))
 
-index = 0
-for by in range(blocks_y):
-    for bx in range(blocks_x):
-        color = random_colors[index]
-        index += 1
+# Track used colors
+used_colors = common_colors.copy()
+color_index = 0
 
-        for y in range(by * block_size, (by + 1) * block_size):
-            for x in range(bx * block_size, (bx + 1) * block_size):
-                img.putpixel((x, y), color)
+# Fill the image row by row with horizontally alternating block widths
+y = 0
+while y < height:
+    x = 0
+    toggle = 0
+    while x < width:
+        block_width = block_widths[toggle % len(block_widths)]
+        toggle += 1
 
-img.save("random_mixed_checkered.png")
-print("Image saved as random_mixed_checkered.png")
+        # Pick color
+        if color_index < len(used_colors):
+            color = used_colors[color_index]
+        else:
+            color = random.choice(colors_8bit)
+            used_colors.append(color)
+        color_index += 1
 
+        # Paint block
+        for by in range(y, min(y + block_heights, height)):
+            for bx in range(x, min(x + block_width, width)):
+                img.putpixel((bx, by), color)
+
+        x += block_width
+    y += block_heights
+
+img.save("horizontal_alternating_blocks.png")
+print("Image saved as horizontal_alternating_blocks.png")

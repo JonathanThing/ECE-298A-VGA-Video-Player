@@ -20,8 +20,8 @@ project:
     - "project.v"
     - "instruction_decoder.v"
     - "data_buffer.v"
-    - "qspi_controller.v"
     - "vga_module.v"
+    - "qspi_fsm.v"
 
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
@@ -54,8 +54,8 @@ pinout:
   uio[3]: "IO_0"
   uio[4]: "SCLK"
   uio[5]: "PWM"
-  uio[6]: "B_2"
-  uio[7]: "IO_3"
+  uio[6]: "IO_3"
+  uio[7]: ""
 
 # Do not change!
 yaml_version: 6
