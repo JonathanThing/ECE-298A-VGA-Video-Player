@@ -13,6 +13,16 @@ def set_4bit_io(dut, value):
     dut.ui_in[3].value  = (value >> 2) & 1  # IO_2
     dut.uio_in[6].value = (value >> 3) & 1  # IO_3
 
+def get_rgb(output_value):
+    # red is bits 2,1,0
+    # green is bits 5,4,3
+    # blue is bits 7,6
+    red = ((output_value & 0b100) >> 2) << 2 | ((output_value & 0b10) >> 1) << 1 | (output_value & 0b1)
+    green = ((output_value & 0b100000) >> 5) << 2 | ((output_value & 0b10000) >> 4) << 1 | ((output_value & 0b1000) >> 3)
+    blue = ((output_value & 0b10000000) >> 7) << 1 | ((output_value & 0b1000000) >> 6)
+
+    return (red << 5) | (green << 2) | blue
+
 @cocotb.test()
 async def test_project(dut):
     dut._log.info("Start")
@@ -68,8 +78,18 @@ async def test_project(dut):
 
     with open("resources/data.bin", "rb") as f:
         data = f.read()
+
+    output_file = open("resources/output.bin", "wb")
+
     total_nibbles = len(data) * 2
 
+    leading_blank_count = 0
+
+    # we count up to 640 and then it is blanking, we halt output to file for 160 clocks
+    current_blank_width = 1
+
+    # we count up to 480 and then it is blanking, we halt output to file for 45 rows
+    current_blank_height = 1
     for nibble_index in range(total_nibbles):
         # Wait until SCLK goes high (i.e., ready to receive next nibble)
         timeout = 50000
@@ -79,6 +99,27 @@ async def test_project(dut):
             await RisingEdge(dut.clk)
             sclk_enabled = (dut.uio_out[4] == 1)
             await FallingEdge(dut.clk)
+            
+            # wait for the leading blank region to finish
+            if(leading_blank_count > 35317):
+                colour = get_rgb(dut.uo_out.value)
+                if(current_blank_width <= 640 and current_blank_height <= 480):
+                    output_file.write(int(colour).to_bytes(1, 'big'))
+
+                current_blank_width += 1
+                if(current_blank_width == 801):
+                    # reset width count
+                    current_blank_width = 1
+                    # increment height count
+                    current_blank_height += 1
+                
+
+                if(current_blank_height == 526):
+                    # reset height count
+                    current_blank_height = 1
+
+            else:
+                leading_blank_count += 1
             set_4bit_io(dut, 0)
 
             if sclk_enabled:
