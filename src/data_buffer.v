@@ -1,6 +1,5 @@
 /*
- * 18-bit Instruction Buffer
- * Provides valid signal when a complete instruction is ready
+ * A 18-bit Data Buffer
  */
 
 module data_buffer (
@@ -15,7 +14,7 @@ module data_buffer (
 );
 
     // Internal registers
-    reg [17:0] buf_reg;    // 20-bit shift register
+    reg [17:0] buf_reg;    // 18-bit shift register
     reg        empty_reg;    // Valid flag register
 
     // Output assignments
@@ -28,8 +27,8 @@ module data_buffer (
             buf_reg <= 18'b0;
             empty_reg <= 1'b1;
         end else begin
-            if (shift_data | empty_reg) begin          // Shift Data requested
-                if (prev_empty) begin                   // If previous is empty, shift empty
+            if (shift_data | empty_reg) begin           // Shift Data is requested
+                if (prev_empty) begin                   // If previous is empty
                     buf_reg <= 18'b0;
                     empty_reg <= 1'b1;
                 end else begin                          // If previous is not empty
