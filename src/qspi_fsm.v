@@ -22,9 +22,7 @@ module qspi_fsm (
 
     // Output interface
     output wire [17:0] instruction,        // 18-bit data output
-    output wire        spi_cs_oe,
     output wire        spi_di_oe,
-    output wire        spi_sclk_oe,
     output wire        spi_hold_n_oe,
     output wire        valid           // High when instruction is valid
 );

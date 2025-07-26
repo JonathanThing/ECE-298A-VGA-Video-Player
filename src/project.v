@@ -88,9 +88,7 @@ module tt_um_jonathan_thing_vga (
         .spi_io2(ui_in[3]),
         .spi_io3(uio_in[6]),
 
-        .spi_cs_oe(uio_oe[2]),
         .spi_di_oe(uio_oe[3]),
-        .spi_sclk_oe(uio_oe[4]),
         .spi_hold_n_oe(uio_oe[6]),
 
         .instruction(spi_data),
@@ -197,6 +195,6 @@ module tt_um_jonathan_thing_vga (
     );
     
     // Unused signals
-    wire _unused = &{ena, ui_in[7:4], ui_in[1:0], uio_in[6:4], uio_in[2:0], uio_oe[5], uio_out[5], uio_in[5], uio_out[7], uio_in[7]};
+    wire _unused = &{ena, ui_in[7:4], ui_in[1:0], uio_in[6:4], uio_in[2:0], uio_oe[5], uio_out[5], uio_in[5], uio_out[7], uio_oe[7], uio_in[7]};
     
 endmodule
