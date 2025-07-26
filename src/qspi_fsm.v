@@ -136,6 +136,14 @@ module qspi_fsm (
                         di_reg <= 1'b0;
                     end
                 endcase
+
+                case (next_state)
+                    SEND_CMD: begin
+
+                    end
+
+                    
+                endcase
             end
         end
     end

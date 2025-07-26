@@ -47,16 +47,25 @@ module tt_um_jonathan_thing_vga (
     wire [17:0] data_2;
     wire [17:0] data_3;
     wire [17:0] data_4;
+    wire [17:0] data_5;
+    wire [17:0] data_6;
 
     wire data_1_empty;
     wire data_2_empty;
     wire data_3_empty;
     wire data_4_empty;
+    wire data_5_empty;
+    wire data_6_empty;
 
     wire global_shift;
+    wire upper_shift;
+    wire lower_shift;
 
     wire stop_detected;
     reg reset_n_req;
+
+    assign upper_shift = data_1_empty | data_2_empty | data_3_empty;
+    assign lower_shift = data_4_empty | data_5_empty | data_6_empty;
 
     qspi_fsm qspi_cont_inst (
         .clk(clk),
@@ -77,13 +86,13 @@ module tt_um_jonathan_thing_vga (
         .spi_sclk_oe(uio_oe[4]),
         .spi_hold_n_oe(uio_oe[6]),
         .valid(spi_ready),       // High when instruction is valid
-        .shift_data(global_shift | data_1_empty | data_2_empty | data_3_empty | data_4_empty)
+        .shift_data(global_shift | lower_shift | upper_shift)
     );
 
     data_buffer buf1(
         .clk(clk),
         .rst_n(rst_n & reset_n_req),
-        .shift_data(global_shift | data_2_empty | data_3_empty | data_4_empty),
+        .shift_data(global_shift | data_2_empty | data_3_empty | data_4_empty | lower_shift),
         
         .data_in(spi_data),
         .prev_empty(!spi_ready),
@@ -94,7 +103,7 @@ module tt_um_jonathan_thing_vga (
     data_buffer buf2(
         .clk(clk),
         .rst_n(rst_n & reset_n_req),
-        .shift_data(global_shift | data_3_empty | data_4_empty),
+        .shift_data(global_shift | data_3_empty | data_4_empty | lower_shift),
 
         .data_in(data_1),
         .prev_empty(data_1_empty),
@@ -105,7 +114,7 @@ module tt_um_jonathan_thing_vga (
     data_buffer buf3(
         .clk(clk),
         .rst_n(rst_n & reset_n_req),
-        .shift_data(global_shift | data_4_empty),
+        .shift_data(global_shift | data_4_empty | lower_shift),
 
         .data_in(data_2),
         .prev_empty(data_2_empty),
@@ -116,12 +125,34 @@ module tt_um_jonathan_thing_vga (
     data_buffer buf4(
         .clk(clk),
         .rst_n(rst_n & reset_n_req),
-        .shift_data(global_shift),
+        .shift_data(global_shift | lower_shift),
 
         .data_in(data_3),
         .prev_empty(data_3_empty),
         .data_out(data_4),
         .empty(data_4_empty)
+    );
+
+    data_buffer buf5(
+        .clk(clk),
+        .rst_n(rst_n & reset_n_req),
+        .shift_data(global_shift | data_5_empty | data_6_empty),
+
+        .data_in(data_4),
+        .prev_empty(data_4_empty),
+        .data_out(data_5),
+        .empty(data_5_empty)
+    );
+
+    data_buffer buf6(
+        .clk(clk),
+        .rst_n(rst_n & reset_n_req),
+        .shift_data(global_shift | data_6_empty),
+
+        .data_in(data_5),
+        .prev_empty(data_5_empty),
+        .data_out(data_6),
+        .empty(data_6_empty)
     );
 
     wire req_next_pix;
@@ -130,7 +161,7 @@ module tt_um_jonathan_thing_vga (
         .clk(clk),
         .rst_n(rst_n & reset_n_req),
 
-        .instruction(data_4),
+        .instruction(data_6),
         .pixel_req(req_next_pix),
         
         .cont_shift(global_shift),

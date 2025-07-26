@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Tue Jul 22 02:59:58 2025
+[*] Sat Jul 26 18:34:06 2025
 [*]
 [dumpfile] "/workspaces/VGA-Video-Player/test/tb.vcd"
-[dumpfile_mtime] "Tue Jul 22 01:01:44 2025"
-[dumpfile_size] 81762842
+[dumpfile_mtime] "Sat Jul 26 18:33:13 2025"
+[dumpfile_size] 89888668
 [savefile] "/workspaces/VGA-Video-Player/test/tb.gtkw"
-[timestart] 875300000
+[timestart] 0
 [size] 2560 1368
 [pos] -1 -1
-*-26.658348 1383030000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-28.658348 23000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] tb.
 [treeopen] tb.user_project.
 [sst_width] 297
@@ -72,5 +72,8 @@ tb.user_project.data_1[17:0]
 tb.user_project.data_2[17:0]
 tb.user_project.data_3[17:0]
 tb.user_project.data_4[17:0]
+tb.user_project.data_5[17:0]
+@23
+tb.user_project.data_6[17:0]
 [pattern_trace] 1
 [pattern_trace] 0
