@@ -7,6 +7,18 @@ You can also include images in this folder and reference them in the markdown. E
 512 kb in size, and the combined size of all images must be less than 1 MB.
 -->
 
+## Rough Timing Diagrams
+
+### Boot sequence timing diagram
+<p align="center">
+  <img src="https://github.com/JonathanThing/VGA-Video-Player/blob/Verilog-Fixes/docs/imgs/Startup_Sequence.png?raw=true" alt="Diagram 2"/>
+</p>
+
+### Regular operation QSPI timing diagram
+<p align="center">
+  <img src="https://github.com/JonathanThing/VGA-Video-Player/blob/Verilog-Fixes/docs/imgs/Instruction_Reading.png?raw=true" alt="Diagram 1"/>
+</p>
+
 ## How it works
 
 Outputs a 640x480 VGA video from external memory with Run Length Encoded (RLE) data using QSPI.
@@ -43,7 +55,10 @@ The mininum requirement of 3 pixels per run is because of limitations from the i
 
 ## How to test
 
-To be determined
+Run the cocotb test script in the `test` folder using `make -B`. The timing test results will be shown in the console log.
+
+cd into the `scripts` folder and do `python3 vga_converter.py ../resources/output.bin`. Make note of the original image `resources/sample_test.png`. After running the script, you should get a new file
+`scripts/output.png`. Compare and verify the two images look the same.
 
 ## External hardware
 
