@@ -25,10 +25,13 @@ module tt_um_jonathan_thing_vga (
     input  wire       clk,      // clock (~25MHz pixel clock)
     input  wire       rst_n     // reset_n - low to reset
 );
-    
+
+    // Drive unused signals
     // Unused signals for PWM audio, (Not Implemented)
-    // assign uio_oe[5] = 0;   
-    // assign uio_out[5] = 0;
+    assign uio_oe[5] = 0;   
+    assign uio_out[5] = 0;
+    assign uio_oe[7] = 0;
+    assign uio_out[7] = 0;
 
     // Output Enable signals
     assign uio_oe[1:0] = 2'b11; // HSYNC, VSYNC outputs
