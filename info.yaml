@@ -3,7 +3,7 @@ project:
   title:        "VGA-Video-Player"      # Project title
   author:       "Jonathan Cai, Isaac Chan"      # Your name
   discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "RLE VGA video player in 3 bit colour"      # One line description of what your project does
+  description:  "RLE VGA video player"      # One line description of what your project does
   language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
   clock_hz:     25175000       # Clock frequency in Hz (or 0 if not applicable)
 
@@ -28,8 +28,8 @@ project:
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 pinout:
   # Inputs
-  ui[0]: "SPI_Latency_0"
-  ui[1]: "SPI_Latency_1"
+  ui[0]: ""
+  ui[1]: ""
   ui[2]: "IO_1"
   ui[3]: "IO_2"
   ui[4]: ""
@@ -53,7 +53,7 @@ pinout:
   uio[2]: "nCS"
   uio[3]: "IO_0"
   uio[4]: "SCLK"
-  uio[5]: "PWM"
+  uio[5]: ""
   uio[6]: "IO_3"
   uio[7]: ""
 

@@ -1,13 +1,11 @@
 /*
  * VGA Display Module
  * Generates VGA timing signals for 640x480 @ 60Hz resolution
- * Takes RGB input from instruction decoder and drives VGA outputs
  */
 
 module vga_module (
-    input  wire       clk,        // 25MHz pixel clock
+    input  wire       clk,        
     input  wire       rst_n,      // Reset (active low)
-    //input  wire [7:0] rgb_in,     // 8-bit RGB input (RRRGGGBB)
 
     output wire       hsync,      // Horizontal sync
     output wire       vsync,      // Vertical sync
@@ -35,7 +33,7 @@ module vga_module (
     reg [9:0] h_counter;    // Horizontal counter (0-799)
     reg [9:0] v_counter;    // Vertical counter (0-524)
     
-    // Sync and RGB output registers
+    // Sync output registers
     reg hsync_reg;
     reg vsync_reg;
     
@@ -44,26 +42,24 @@ module vga_module (
     wire v_display_area;
     wire v_edge_case;
     wire h_edge_case;
-    wire display_area;
     
     // Assign outputs
     assign hsync = hsync_reg;
     assign vsync = vsync_reg;
     
     // Determine if in display area
-    assign h_display_area = (h_counter < H_DISPLAY-1); 
+    assign h_display_area = (h_counter < H_DISPLAY - 1);
     assign v_display_area = (v_counter < V_DISPLAY);
     assign h_edge_case = (h_counter == H_TOTAL - 1) && (v_counter < V_DISPLAY - 1);  // The clock cycle before start of new line
     assign v_edge_case = (h_counter == H_TOTAL - 1) && (v_counter == V_TOTAL - 1);  // The clock cycle before start of frame
-    assign display_area = h_display_area && v_display_area || v_edge_case || h_edge_case;
-    
+
     // Pixel request: assert when in the display area
-    assign pixel_req = display_area;
+    assign pixel_req = h_display_area && v_display_area || v_edge_case || h_edge_case;
     
-    // Main VGA logic - single always block
+    // Main VGA logic
     always @(posedge clk) begin
         if (!rst_n) begin
-            h_counter <= H_DISPLAY; // Start in blanking area to sync with the display
+            h_counter <= H_DISPLAY; // Start in blanking area to give time to fill the buffers and to sync
             v_counter <= V_DISPLAY;
             hsync_reg <= 1'b1;
             vsync_reg <= 1'b1;

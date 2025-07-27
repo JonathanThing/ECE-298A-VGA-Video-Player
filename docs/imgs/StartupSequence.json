@@ -1,0 +1,12 @@
+{signal: [
+  {name: "CLK", wave: 'P...............'},
+  {name: 'SCLK', wave:'l.p..............', phase:0.5},
+  {name: '/CS', wave: 'hl..............'},
+  {name: 'DI_OUTPUT', wave: 'xlh.lhlh.l......', data: ["", "16", "12", "8", "4", "0", "0", "4", "0", "4", "0"]},
+  {name: "HOLD_OUTPUT", wave:'1...............', data: ["[19:16]", "[19:12]", "[19:8]", "[19:4]", "[19:0]"]},
+  {name: "Counter", wave:'x222222222222xxx', data: [ "0", "1", "2", "3", "4", "5", "6", "7", "0", "1", "...", "1F"]},
+  {name: 'Anno', wave:  '34.......5.|.7..', data:["Setup", "Set Mode (0x6B)", "Dummy Cycles (32 clks)", "Read Data"]},
+],
+ head:{tick:['0 1 2 3 4 5 6 7 8 9 ... ... ... 41 42 43 44 ...']},
+edge: ['a-|b Row']
+}

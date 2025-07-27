@@ -1,6 +1,6 @@
 /*
  * Instruction Decoder Module
- * Decodes 20-bit instructions into run-length encoded RGB data
+ * Decodes 18-bit RLE instruciton and outputs the RGB values for VGA display 
  * Format: [17:8] Run length (10 bits), [7:0] RGB color (RRRGGGBB)
  */
 
@@ -11,31 +11,32 @@ module instruction_decoder (
     input  wire         pixel_req,     // Request for next pixel from VGA
     
     output wire         cont_shift,
-    output wire [2:0]   red,        // Red output (3 bits)
-    output wire [2:0]   green,      // Green output (3 bits) 
-    output wire [1:0]   blue,      // Blue output (2 bits)
+    output wire [2:0]   red,            // Red output (3 bits)
+    output wire [2:0]   green,          // Green output (3 bits) 
+    output wire [1:0]   blue,           // Blue output (2 bits)
     output wire         stop_detected
 );
 
     // Internal registers
     reg [9:0] run_length;     // Current run length (10 bits)
     reg [9:0] run_counter;    // Counter for current run
-    reg        have_data;      // Flag indicating we have valid data to output
+    reg        have_data;     // Flag indicating we have valid data to output
 
+    assign cont_shift = !have_data; // Shift if does not have data
+
+    // RGB output registers
     reg [2:0] red_reg;
     reg [2:0] green_reg;
     reg [1:0] blue_reg;
 
-    reg stop_detected_reg;
-
-    assign cont_shift = !have_data;
-
     assign red = red_reg;
     assign green = green_reg;
     assign blue = blue_reg;
+
+    // Stop detection register
+    reg stop_detected_reg;
     assign stop_detected = stop_detected_reg;
 
-    // Main decoder logic - single always block
     always @(posedge clk) begin
         if (!rst_n) begin
             run_length <= 10'b0;
@@ -46,32 +47,36 @@ module instruction_decoder (
             blue_reg <= 2'b0;
             stop_detected_reg <= 1'b0;
         end else begin
-            run_length  <= instruction[17:8];   // Extract run length
-            run_counter <= 10'b0;              // Reset counter
-            have_data   <= 1'b1;            
+            // Default Behaviour
+            run_length  <= instruction[17:8];   // Extract run length from instruction register (outside module)
+            run_counter <= 10'b0;               // Reset counter
+            have_data   <= 1'b1;                // Mark that we have data to output
 
-            if (instruction == 18'h500) begin
+            if (instruction == 18'h500) begin   // If stop code detected
                 stop_detected_reg <= 1'b1;
             end
 
-            // Output pixel when requested and we have data
+            // Output pixel when requesting pixels and we have data
             if (pixel_req && have_data) begin
-                // Check if run is complete
-                if (run_counter + 2 == run_length) begin
-                    have_data <= 1'b0;             // Mark that we need new data
-                end else begin
-                    run_counter <= run_counter + 1;    // Increment run counter 
+                run_counter <= run_counter + 1;         // Increment run counter instead 
+                if (run_counter + 2 == run_length) begin    // If run is complete
+                    have_data <= 1'b0;                      // Mark that we need new data instead
                 end
             end
-         
+
+            // The reason why we do run_counter + 2 is because:
+            // 1. Outputting a pixel has 1 clock cycle delay because of the FF logic
+            //    This causes the first pixel to be outputed when run_counter is 1
+            // 2. Shifting data also has 1 clock cycle delay beacuse of the FF logic too
+            // So we trigger the shift flag 2 cycles before the run is complete
+            // This accounts for the both the delay from outputting and shifting the data
+
             // RGB output logic
-            if (pixel_req) begin 
-                // Extract RGB components from 8-bit input (RRRGGGBB)
+            if (pixel_req) begin    // If pixel requested
                 red_reg <= instruction[7:5];    // Bits [7:5] = Red
                 green_reg <= instruction[4:2];  // Bits [4:2] = Green  
                 blue_reg <= instruction[1:0];   // Bits [1:0] = Blue
-            end else begin
-                // Output black when not in display area or no valid data
+            end else begin          // If pixel not requested, output black
                 red_reg <= 3'b0;
                 green_reg <= 3'b0;
                 blue_reg <= 2'b0;
