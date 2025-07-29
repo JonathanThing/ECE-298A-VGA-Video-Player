@@ -2,8 +2,8 @@ from PIL import Image
 import random
 
 width, height = 640, 480
-block_heights = 40
-block_widths = [3]  # alternating widths
+block_heights = 1
+block_widths = [640]  # alternating widths
 
 # Color mapping functions
 def map_3bit_to_8bit(val):
@@ -52,5 +52,5 @@ while y < height:
         x += block_width
     y += block_heights
 
-img.save("horizontal_alternating_blocks.png")
-print("Image saved as horizontal_alternating_blocks.png")
+img.save("input.png")
+print("Image saved as input.png")

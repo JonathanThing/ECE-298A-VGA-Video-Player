@@ -51,9 +51,10 @@ module instruction_decoder (
             run_length  <= instruction[17:8];   // Extract run length from instruction register (outside module)
             run_counter <= 10'b0;               // Reset counter
             have_data   <= 1'b1;                // Mark that we have data to output
-
-            if (instruction == 18'h500) begin   // If stop code detected
+            if (instruction == 18'h30000) begin   // If stop code is the next instruction
                 stop_detected_reg <= 1'b1;
+            end else begin
+                stop_detected_reg <= 1'b0;
             end
 
             // Output pixel when requesting pixels and we have data
