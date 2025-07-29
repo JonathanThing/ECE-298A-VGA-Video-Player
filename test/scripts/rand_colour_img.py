@@ -3,7 +3,7 @@ import random
 
 width, height = 640, 480
 block_heights = 40
-block_widths = [3]  # alternating widths
+block_widths = [40]  # alternating widths
 
 # Color mapping functions
 def map_3bit_to_8bit(val):

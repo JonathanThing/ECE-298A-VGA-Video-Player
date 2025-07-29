@@ -150,7 +150,7 @@ def decode_rle(rle_path, output_path, width=640, height=480):
 # Example usage
 if __name__ == "__main__":
     # Encode PNG to RLE
-    encode_rle("input.png", "output.rle")
+    encode_rle("input.png", "data.bin")
     
     # Decode RLE back to PNG (for verification)
     #decode_rle("output.rle", "decoded.png")

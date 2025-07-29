@@ -57,8 +57,12 @@ The mininum requirement of 3 pixels per run is because of limitations from the i
 
 Run the cocotb test script in the `test` folder using `make -B`. The timing test results will be shown in the console log.
 
-cd into the `scripts` folder and do `python3 vga_converter.py ../resources/output.bin`. Make note of the original image `resources/sample_test.png`. After running the script, you should get a new file
+cd into the `scripts` folder and do `python vga_converter.py ../resources/output.bin`. Make note of the original image `resources/sample_test.png`. After running the script, you should get a new file
 `scripts/output.png`. Compare and verify the two images look the same.
+
+For custom tests, you can put an image in the `test/scripts` folder (ensuring it is a 640x480 PNG image) and then run `python png_to_rle_converter.py`. This should give you a `data.bin` file which you can place in `test/resources`. Now you can cd to `test` and run `make -B`. You should see `output.bin` get created. cd to `scripts` and run `python vga_converter.py ../resources/output.bin`. You can see and compare the output image given in `output.png`. 
+
+The test emulate what would be output on a screen using a VGA port. For example, we log to the file directly the colour of each pixel. Through our `test.py` script we read the `data.bin` file for the RLE data and decode it into each pixel on the screen. The `test.py` script will ignore any of the blanking regions (through a counter separate from the verilog files in the `test.py` file; allowing us to test correct blanking as well) so that we can get raw VGA data for one frame. This allows us to test the correctness of the output visually. 
 
 ## External hardware
 
