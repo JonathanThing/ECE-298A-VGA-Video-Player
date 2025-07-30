@@ -26,15 +26,13 @@ Outputs a 640x480 VGA video from external memory with Run Length Encoded (RLE) d
 
 RLE works by breaking an image down into strips of consequtive pixels, specifying the length and colour of the strip.
 
-Each instruction is 3 bytes (18 bits of data + 4 bits of padding) and is stored in the form:
+Each instruction is 3 bytes (18 bits of data + 6 bits of padding) and is stored in the form:
 
-|-----------------|-------------------|--------------|
 | padding [23:18] | run_length [17:8] | colour [7:0] |
 |-----------------|-------------------|--------------|  
 
 The video player uses 8 bit colour (3 bits for Red, 3 bits for Green, 2 bits for Blue)
 
-|-----------|-------------|------------|
 | red [7:5] | green [4:2] | blue [1:0] |
 |-----------|-------------|------------|
 
@@ -42,6 +40,7 @@ The video player uses 8 bit colour (3 bits for Red, 3 bits for Green, 2 bits for
 Requirements for RLE Data:
 - One pixel run must be at least 3 pixels
 - For any given 6 consequtive pxiel runs, the number of pixels must sum up to 36
+- A valid pixel run should be at most 640 pixels
 
 The chip reads the data stored in the external flash memory using a continous sequential read command, where it expects to be able to continuously clock data sequentailly from 0 to the final memory address. 
 
@@ -52,6 +51,9 @@ Therefore, without a buffer, this would mean that every strip would have to be a
 By using 6 buffers, we loosen the requirement to 36 pixels for every 6 runs, allowing for a few runs smaller than 6 without desyncing the video
 
 The mininum requirement of 3 pixels per run is because of limitations from the implementation.
+
+Commands:
+- An instruction 0x30000 is used as a stop instruction that will restart the video from the beginning. (The instruction has a run length of 768 which is longer than the width of the screen)
 
 ## How to test
 

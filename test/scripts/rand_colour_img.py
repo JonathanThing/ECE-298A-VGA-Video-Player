@@ -52,5 +52,5 @@ while y < height:
         x += block_width
     y += block_heights
 
-img.save("horizontal_alternating_blocks.png")
-print("Image saved as horizontal_alternating_blocks.png")
+img.save("input.png")
+print("Image saved as input.png")

@@ -58,9 +58,12 @@ def encode_rle(image_path, output_path):
         max_run = min(1023, len(flat_pixels) - i)  # Max 10-bit value
         
         while run_length < max_run and i + run_length < len(flat_pixels):
+            if (i + run_length) % width == 0:
+                break
+            
             next_r, next_g, next_b = flat_pixels[i + run_length]
             next_color = rgb_to_rrrgggbb(next_r, next_g, next_b)
-            
+
             if next_color == current_color:
                 run_length += 1
             else:
@@ -75,9 +78,9 @@ def encode_rle(image_path, output_path):
         rle_data.append(rle_bytes)
         
         i += run_length
-    
-    # Add stop message instruction: 0x500
-    stop_instruction = 0x500
+
+    # Add stop message instruction: 0x30000
+    stop_instruction = 0x30000
     stop_bytes = struct.pack('>I', stop_instruction)[1:]
     rle_data.append(stop_bytes)
 
