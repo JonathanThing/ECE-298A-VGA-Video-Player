@@ -94,7 +94,7 @@ Using RLE instructions which are 24 bit instructions
 Supports up to 640 run length, with minimum of 2
 
 |24:18|17:8|7:5|4:2|1:0|
-|--|--|--|--|--|--|
+|--|--|--|--|--|
 | Discarded | Run Length |Red Channel|Green Channel|Blue Channel|
 
 #### Block Diagram
