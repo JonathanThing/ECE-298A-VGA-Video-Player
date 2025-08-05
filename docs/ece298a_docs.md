@@ -73,6 +73,9 @@ From looking at these errors, it seems most of the errors are from the buffers (
 ### Pre vs. Post Logs
 In the pre-layout logs for the nominal 25C and 40C levels, we get slew errors as high as 2.2ns, however, in post-layout these errors go away. In both situations we have fanout violations, but as mentioned in the previous paragraph, they are below 25 and can be safely ignored. Up to the 100C level, we get slew violations up to 3.6ns, but the post-layout logs have them at 1.18ns at most. 
 
+### Static Timing Analysis for Nominal TT 25C 1V80
+The pre-layout logs indicate many slew and fanout violations, with some fanouts being as high as 67 and the slew being as high as 2.22ns. After analyzing the logs, it seems most of the violations are due to the buffers and their data registers. However, after the layout done by OpenLane, there are no slew issues, but there are still fanout issues, with the highest being at 18. However, as stated previously fanouts as high as 25 are acceptable, so the post-layout fanout is acceptable. However, there are slack violations now, with the highest being at -8. These violations occur on the clkbuf pins, and from the TinyTapeout Slack and Discord channels, it seems it is more acceptable for the clk tree to use a larger fanout. However, it would still be best to reduce the slack, and in order to do this we would need to either look into Verilog optimizations or manually configure OpenLane settings to increase the slack. 
+
 ## Additional Design Documentation
 
 ### Pinout
