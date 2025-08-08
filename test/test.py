@@ -113,7 +113,6 @@ async def test_project(dut):
                     # increment height count
                     current_blank_height += 1
                 
-
                 if(current_blank_height == 526):
                     # reset height count
                     current_blank_height = 1
@@ -135,7 +134,24 @@ async def test_project(dut):
     dut._log.info("All data from data.bin successfully streamed.")
     await FallingEdge(dut.clk)
     set_4bit_io(dut, 0)
-    await ClockCycles(dut.clk, 800*7) # wait for buffer to be emptied
+
+    for i in range(800*7): # wait for buffer to be emptied
+        colour = get_rgb(dut.uo_out.value)
+        if(current_blank_width <= 640 and current_blank_height <= 480):
+            output_file.write(int(colour).to_bytes(1, 'big'))
+
+        current_blank_width += 1
+        if(current_blank_width == 801):
+            # reset width count
+            current_blank_width = 1
+            # increment height count
+            current_blank_height += 1
+        
+        if(current_blank_height == 526):
+            # reset height count
+            current_blank_height = 1
+
+        await ClockCycles(dut.clk, 1) 
 
     await ClockCycles(dut.clk, 100)  # Observe the Reset behaviour
 

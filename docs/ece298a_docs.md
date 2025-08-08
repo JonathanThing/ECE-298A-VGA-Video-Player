@@ -23,15 +23,16 @@ Additional design documentation can be found at the end of the document
 		 - [ ] **Validation:** Await 32 cycles, check FSM state at the end
  - [ ] **Main Test:** Test QSPI Data Transfer Timing and Buffer Timing
 	 - [ ] **Sub Test:** Test filling buffer from empty/startup state
-		 - [ ] Should take 14 cycles to fill the last buffer once data transmission starts
+		 - [ ] Should take 12 cycles to fill the last buffer once data transmission starts
 		 - [ ] Data should not be shifted out unless requested
-		 - [ ] **Validation:** After we begin data transmission, check if buffer is filled after 14 cycles
-		 - [ ] **Validation:** Each preceding buffer should be filled every 7 cycles thereafter
+		 - [ ] **Validation:** After we begin data transmission, check if buffer is filled after 12 cycles
+		 - [ ] **Validation:** Each preceding buffer should be filled every 6 cycles thereafter while there is space
 	 - [ ] **Sub Test:** Test buffer timing and shifting during normal operation
-		 - [ ] Should still take 7 cycles to fill a buffer
+		 - [ ] Should still take 6 cycles to fill a buffer
 		 - [ ] Data should stop being sent if all buffers full (turn off SPI Clock)
 		 - [ ] Data should only be shifted out once it has been consumed by Instruction Decoder Module
-		 - [ ] **Validation:** Check if buffer gets filled every 7 cycles when a buffer is empty
+		 - [ ] **Validation:** Check if buffer gets filled every 6 cycles when a buffer is empty
+		 - [ ] **Validation:** Check if data is passed through empty buffers 
 		 - [ ] **Validation:** Check if SPI Clock is turned off (held low) when all buffers are full
 		 - [ ] **Validation:** Check consumption (shift out) of last buffer (Buffer 6) when Instruction Decoder consumes data
  - [ ] **Main Test:** Test Instruction Decoder
@@ -45,15 +46,14 @@ Additional design documentation can be found at the end of the document
 		 - [ ] **Validation:** Check value of red, green and blue registers after VGA requests pixel for correctness of RGB values
  - [ ] **Main Test:** Test VGA Timing and Image Correctness
 	 - [ ] **Sub Test:** Test blanking region timing
-		 - [ ] Start in blanking state, count number of cycles, should be 35317 blank cycles after QSPI startup is complete
-		 - [ ] **Validation:** Check if VGA module is ready to accept pixel data after 35317 cycles
+		 - [ ] Start in blanking state, count number of cycles, should be 35319 blank cycles after QSPI startup is complete
+		 - [ ] **Validation:** Check if VGA module is ready to accept pixel data after 35319 cycles
 	 - [ ] **Sub Test:** Image Correctness and Normal Operation timing
 		 - [ ] Pixels should be requested for 640 clock cycles, then blank for 160 cycles each row
 		 - [ ] After 480 rows, blank for 45 rows
 		 - [ ] **Validation:** Check pixel request value at each blanking region (should be deasserted)
-		 - [ ] **Validation:** Use internal counter in cocotb to keep track of cycles to determine blanking state and compare with VGA module state
 		 - [ ] **Validation:** Log to file the VGA output, use Python script to compare and generate image with a known sample image 
-  
+
 
 ## cocotb Test Results
 
@@ -82,9 +82,9 @@ The pre-layout logs indicate many slew and fanout violations, with some fanouts 
 |#|Input|Output  | Bidir|
 |--|--|--|--|
 | 0 |  |R[0]|HSYNC (OUT ONLY)|
-|  1| IO1 (DO) |R[1]|VSYNC (OUT ONLY)|
-|  2|  IO2|R[2]|nCS (OUT ONLY)|
-|  3|  |G[0]|IO0 (DI) (I/O)|
+|  1|  (DO) |R[1]|VSYNC (OUT ONLY)|
+|  2| IO1 |R[2]|nCS (OUT ONLY)|
+|  3| IO2 |G[0]|IO0 (DI) (I/O)|
 |  4|  |G[1]|SCLK (OUT ONLY)|
 |  5|  |G[2]||
 |  6|  |B[0]|IO3 (HOLD) (I/O)|
