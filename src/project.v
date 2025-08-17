@@ -30,7 +30,7 @@ module tt_um_jonathan_thing_vga (
     // Unused signals for PWM audio, (Not Implemented)
     assign uio_oe[5] = 0;   
     assign uio_out[5] = 0;
-    assign uio_oe[7] = 0;
+    assign uio_oe[7] = 1;
     assign uio_out[7] = 0;
 
     // Output Enable signals
@@ -170,9 +170,10 @@ module tt_um_jonathan_thing_vga (
         .empty(data_6_empty)
     );
 
-    // ------------------------- Instruction Decoder and VGA Timing -------------------------------
+    // ------------------------- VGA Output -------------------------------
 
     wire req_next_pix; // Signal the instruction decoder to request the next pixel
+    wire [7:0] pwm_sample;
 
     instruction_decoder decoder(
         .clk(clk),
@@ -185,7 +186,8 @@ module tt_um_jonathan_thing_vga (
         .red(uo_out[2:0]),
         .green(uo_out[5:3]),
         .blue(uo_out[7:6]),
-        .stop_detected(stop_detected)
+        .stop_detected(stop_detected),
+        .pwm_sample(pwm_sample)
     );
 
     vga_module vga_inst(
@@ -196,8 +198,16 @@ module tt_um_jonathan_thing_vga (
         .vsync(uio_out[1]),
         .pixel_req(req_next_pix)
     );
+
+    pwm_module pwm_inst(
+        .clk(clk),
+        .rst_n(rst_n & reset_n_req),
+
+        .sample(pwm_sample),
+        .pwm(uio_out[7])
+    );
     
     // Unused signals
-    wire _unused = &{ena, ui_in[7:4], ui_in[1:0], uio_in[6:4], uio_in[2:0], uio_oe[5], uio_out[5], uio_in[5], uio_out[7], uio_oe[7], uio_in[7]};
+    wire _unused = &{ena, ui_in[7:4], ui_in[1:0], uio_in[6:4], uio_in[2:0], uio_oe[5], uio_out[5], uio_in[5], uio_in[7]};
     
 endmodule

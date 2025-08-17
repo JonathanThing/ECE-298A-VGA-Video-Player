@@ -1,24 +1,23 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Fri Aug  8 07:53:40 2025
+[*] Sun Aug 17 22:47:03 2025
 [*]
 [dumpfile] "/workspaces/VGA-Video-Player/test/tb.vcd"
-[dumpfile_mtime] "Fri Aug  8 07:42:29 2025"
-[dumpfile_size] 162230933
+[dumpfile_mtime] "Sun Aug 17 22:40:33 2025"
+[dumpfile_size] 64679144
 [savefile] "/workspaces/VGA-Video-Player/test/tb.gtkw"
-[timestart] 731000
-[size] 2560 1368
+[timestart] 9675300000
+[size] 1680 978
 [pos] 0 0
-*-17.658348 2160000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-25.658348 9654000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] tb.
 [treeopen] tb.user_project.
 [sst_width] 214
 [signals_width] 230
 [sst_expanded] 1
-[sst_vpaned_height] 896
-@29
-tb.user_project.clk
+[sst_vpaned_height] 487
 @28
+tb.user_project.clk
 tb.user_project.rst_n
 tb.user_project.reset_n_req
 @200
@@ -38,8 +37,19 @@ tb.ui_in[7:0]
 -group_end
 @200
 -Bidirectional Pins
-@22
+@c00022
 tb.user_project.uio_in[7:0]
+@28
+(0)tb.user_project.uio_in[7:0]
+(1)tb.user_project.uio_in[7:0]
+(2)tb.user_project.uio_in[7:0]
+(3)tb.user_project.uio_in[7:0]
+(4)tb.user_project.uio_in[7:0]
+(5)tb.user_project.uio_in[7:0]
+(6)tb.user_project.uio_in[7:0]
+(7)tb.user_project.uio_in[7:0]
+@1401200
+-group_end
 @200
 -Bidir Output OE
 @800022
@@ -161,5 +171,11 @@ tb.user_project.data_6[17:0]
 (17)tb.user_project.data_6[17:0]
 @1401200
 -group_end
+@200
+-PWM
+@22
+tb.user_project.pwm_inst.sample[7:0]
+@28
+tb.user_project.pwm_inst.pwm
 [pattern_trace] 1
 [pattern_trace] 0

@@ -23,11 +23,35 @@ def get_rgb(output_value):
 
     return (red << 5) | (green << 2) | blue
 
+# @cocotb.test()
+# async def test_pwm(dut):
+#     dut._log.info("Start")
+
+#     # Set the clock period to 10 us (100 KHz)
+#     clock = Clock(dut.clk, 40, units="ns")
+#     cocotb.start_soon(clock.start())
+
+#     # Reset
+#     dut._log.info("Reset")
+#     dut.ena.value = 1
+#     dut.ui_in.value = 0
+#     dut.uio_in.value = 0
+#     dut.uo_out.value = 0
+#     dut.uio_out.value = 0
+#     dut.rst_n.value = 0
+#     await ClockCycles(dut.clk, 2)
+#     dut.rst_n.value = 1
+
+#     dut._log.info("Test project behavior")
+
+#     await ClockCycles(dut.clk, 800*3)
+
+#     assert True
+
 @cocotb.test()
 async def test_project(dut):
     dut._log.info("Start")
 
-    # Set the clock period to 10 us (100 KHz)
     clock = Clock(dut.clk, 40, units="ns")
     cocotb.start_soon(clock.start())
 

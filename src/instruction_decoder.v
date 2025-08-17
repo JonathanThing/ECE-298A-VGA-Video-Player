@@ -14,14 +14,17 @@ module instruction_decoder (
     output wire [2:0]   red,            // Red output (3 bits)
     output wire [2:0]   green,          // Green output (3 bits) 
     output wire [1:0]   blue,           // Blue output (2 bits)
-    output wire         stop_detected
+    output wire         stop_detected,
+    output wire [7:0]   pwm_sample
 );
 
     // Internal registers
     reg [9:0] run_length;     // Current run length (10 bits)
     reg [9:0] run_counter;    // Counter for current run
     reg        have_data;     // Flag indicating we have valid data to output
+    reg [7:0] pwm_sample_reg;
 
+    assign pwm_sample = pwm_sample_reg;
     assign cont_shift = !have_data; // Shift if does not have data
 
     // RGB output registers
@@ -46,6 +49,7 @@ module instruction_decoder (
             green_reg <= 3'b0;
             blue_reg <= 2'b0;
             stop_detected_reg <= 1'b0;
+            pwm_sample_reg <= 8'b0;
         end else begin
             // Default Behaviour
             run_length  <= instruction[17:8];   // Extract run length from instruction register (outside module)
@@ -55,6 +59,10 @@ module instruction_decoder (
                 stop_detected_reg <= 1'b1;
             end else begin
                 stop_detected_reg <= 1'b0;
+                if (instruction >= 18'h3FF00) begin // Audio data
+                    pwm_sample_reg <= instruction[7:0];
+                    have_data <= 1'b0;                      // Mark that we need new data instead
+                end 
             end
 
             // Output pixel when requesting pixels and we have data

@@ -82,8 +82,8 @@ The pre-layout logs indicate many slew and fanout violations, with some fanouts 
 |#|Input|Output  | Bidir|
 |--|--|--|--|
 | 0 |  |R[0]|HSYNC (OUT ONLY)|
-|  1|  (DO) |R[1]|VSYNC (OUT ONLY)|
-|  2| IO1 |R[2]|nCS (OUT ONLY)|
+|  1|  |R[1]|VSYNC (OUT ONLY)|
+|  2| IO1 (DO) |R[2]|nCS (OUT ONLY)|
 |  3| IO2 |G[0]|IO0 (DI) (I/O)|
 |  4|  |G[1]|SCLK (OUT ONLY)|
 |  5|  |G[2]||

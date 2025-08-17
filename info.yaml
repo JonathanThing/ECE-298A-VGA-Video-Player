@@ -22,6 +22,7 @@ project:
     - "data_buffer.v"
     - "vga_module.v"
     - "qspi_fsm.v"
+    - "pwm_module.v"
 
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
@@ -55,7 +56,7 @@ pinout:
   uio[4]: "SCLK"
   uio[5]: ""
   uio[6]: "IO_3"
-  uio[7]: ""
+  uio[7]: "PWM"
 
 # Do not change!
 yaml_version: 6
