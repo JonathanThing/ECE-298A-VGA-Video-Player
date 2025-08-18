@@ -29,34 +29,34 @@ project:
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 pinout:
   # Inputs
-  ui[0]: ""
+  ui[0]: "IO_2"
   ui[1]: ""
-  ui[2]: "IO_1"
-  ui[3]: "IO_2"
-  ui[4]: ""
+  ui[2]: ""
+  ui[3]: ""
+  ui[4]: "IO_1"
   ui[5]: ""
   ui[6]: ""
   ui[7]: ""
 
   # Outputs
-  uo[0]: "R_0"
-  uo[1]: "R_1"
-  uo[2]: "R_2"
-  uo[3]: "G_0"
-  uo[4]: "G_1"
-  uo[5]: "G_2"
-  uo[6]: "B_0"
-  uo[7]: "B_1"
+  uo[0]: "R_1"
+  uo[1]: "G_0"
+  uo[2]: "G_2"
+  uo[3]: "B_1"
+  uo[4]: "R_0"
+  uo[5]: "R_2"
+  uo[6]: "G_1"
+  uo[7]: "B_0"
 
   # Bidirectional pins
-  uio[0]: "HSYNC"
-  uio[1]: "VSYNC"
-  uio[2]: "nCS"
+  uio[0]: "VSYNC" 
+  uio[1]: "PWM"
+  uio[2]: "SCLK"
   uio[3]: "IO_0"
-  uio[4]: "SCLK"
+  uio[4]: "HSYNC" 
   uio[5]: ""
   uio[6]: "IO_3"
-  uio[7]: "PWM"
+  uio[7]: "nCS"
 
 # Do not change!
 yaml_version: 6

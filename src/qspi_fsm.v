@@ -14,11 +14,8 @@ module qspi_fsm (
     output wire        spi_hold_n,   // HOLD (We have to hold it high during setup)
 
     // Input Wires
-    input  wire        spi_io0,         // IO0 (for quad read)
-    input  wire        spi_io1,         // DO (data output from flash) - IO1
-    input  wire        spi_io2,         // IO2
-    input  wire        spi_io3,         // IO3/HOLD
-    input  wire        shift_data,      // Signal to have data shifted 
+    input wire [3:0]  spi_io,
+    input wire        shift_data,      // Signal to have data shifted 
 
     // Output interface
     output wire [17:0] instruction,        // 18-bit data output
@@ -52,10 +49,6 @@ module qspi_fsm (
     assign spi_cs_n = cs_n_reg;
     assign spi_di = di_reg;
     assign spi_hold_n = hold_n_reg;
-
-    // Quad data input (IO3, IO2, IO1/DO, IO0)
-    wire [3:0] io_in_data; 
-    assign io_in_data = {spi_io3, spi_io2, spi_io1, spi_io0};
     
     // Output assignments
     assign instruction = instruction_buf[17:0];
@@ -175,7 +168,7 @@ module qspi_fsm (
             instruction_buf <= 24'b0;
         end else begin 
             if (cur_state == READ_DATA) begin 
-                instruction_buf <= {instruction_buf[19:0], io_in_data};
+                instruction_buf <= {instruction_buf[19:0], spi_io};
             end 
         end
     end

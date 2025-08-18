@@ -5,14 +5,14 @@ Top File for the RLE VGA Video Player project
 
 ----- INPUT MAPPING -----
   INPUT           OUTPUT      BIDIR
-0                 R[0]        HSYNC     (OUT ONLY)
-1                 R[1]        VSYNC     (OUT ONLY)
-2 IO1 (DO)        R[2]        nCS       (OUT ONLY)
-3 IO2             G[0]        IO0 (DI)  (I/O)
-4                 G[1]        SCLK      (OUT ONLY)
-5                 G[2]        
-6                 B[0]        IO3 (HOLD)(I/O)
-7                 B[1]        
+0 IO_2            R[1]        VSYNC     (OUT ONLY)
+1                 G[0]        PWM       (OUT ONLY)
+2                 G[2]        SCLK      (OUT ONLY)
+3                 B[1]        IO0 (DI)  (I/O)
+4 IO_1            R[0]        HSYNC     (OUT ONLY)
+5                 R[2]        
+6                 G[1]        IO3 (HOLD)(I/O)
+7                 B[0]        nCS       (OUT ONLY)
 */
 
 module tt_um_jonathan_thing_vga (
@@ -26,16 +26,56 @@ module tt_um_jonathan_thing_vga (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-    // Drive unused signals
-    // Unused signals for PWM audio, (Not Implemented)
-    assign uio_oe[5] = 0;   
-    assign uio_out[5] = 0;
-    assign uio_oe[7] = 1;
+    // Bidir 
+    wire HSYNC;
+    wire VSYNC;
+    wire PWM;
+    wire SCLK;
+    wire DI;
+    wire HOLD;
+    wire nCS;
+    wire HOLD_OE;
+    wire DI_OE;
 
-    // Output Enable signals
-    assign uio_oe[1:0] = 2'b11; // HSYNC, VSYNC outputs
-    assign uio_oe[2] = 1'b1;    // nCS output 
-    assign uio_oe[4] = 1'b1;    // SCLK output
+    // Input
+    wire [3:0] IO;
+
+    // Output
+    wire [2:0] red;
+    wire [2:0] green;
+    wire [1:0] blue;
+
+    // IO mapping
+    assign uio_out = {
+        nCS,        
+        HOLD,        
+        1'b0,       
+        HSYNC,      
+        DI,         
+        SCLK,       
+        PWM,        
+        VSYNC       
+    };
+
+    assign uio_oe = {
+        1'b1,
+        HOLD_OE,
+        1'b0,
+        1'b1,
+        DI_OE,
+        1'b1,
+        1'b1,
+        1'b1
+    };
+
+    // Input
+    assign IO[0] = uio_in[3];
+    assign IO[1] = ui_in[4];
+    assign IO[2] = ui_in[0];
+    assign IO[3] = uio_in[6];
+
+    // Output
+    assign uo_out = {blue[0], green[1], red[2], red[0], blue[1], green[2], green[0], red[1]};
 
     // Data buffers
     wire [17:0] data_1;
@@ -80,18 +120,15 @@ module tt_um_jonathan_thing_vga (
     qspi_fsm qspi_cont_inst (
         .clk(clk),
         .rst_n(rst_n & reset_n_req),
-        .spi_clk(uio_out[4]),
-        .spi_cs_n(uio_out[2]),
-        .spi_di(uio_out[3]),
-        .spi_hold_n(uio_out[6]),
+        .spi_clk(SCLK),
+        .spi_cs_n(nCS),
+        .spi_di(DI),
+        .spi_hold_n(HOLD),
 
-        .spi_io0(uio_in[3]),
-        .spi_io1(ui_in[2]),
-        .spi_io2(ui_in[3]),
-        .spi_io3(uio_in[6]),
+        .spi_io(IO),
 
-        .spi_di_oe(uio_oe[3]),
-        .spi_hold_n_oe(uio_oe[6]),
+        .spi_di_oe(DI_OE),
+        .spi_hold_n_oe(HOLD_OE),
 
         .instruction(spi_data),
         .valid(spi_ready),       
@@ -182,9 +219,9 @@ module tt_um_jonathan_thing_vga (
         .pixel_req(req_next_pix),
         
         .cont_shift(global_shift),
-        .red(uo_out[2:0]),
-        .green(uo_out[5:3]),
-        .blue(uo_out[7:6]),
+        .red(red),
+        .green(green),
+        .blue(blue),
         .stop_detected(stop_detected),
         .pwm_sample(pwm_sample)
     );
@@ -193,8 +230,8 @@ module tt_um_jonathan_thing_vga (
         .clk(clk),
         .rst_n(rst_n & reset_n_req),
 
-        .hsync(uio_out[0]),
-        .vsync(uio_out[1]),
+        .hsync(HSYNC),
+        .vsync(VSYNC),
         .pixel_req(req_next_pix)
     );
 
@@ -203,10 +240,10 @@ module tt_um_jonathan_thing_vga (
         .rst_n(rst_n & reset_n_req),
 
         .sample(pwm_sample),
-        .pwm(uio_out[7])
+        .pwm(PWM)
     );
     
     // Unused signals
-    wire _unused = &{ena, ui_in[7:4], ui_in[1:0], uio_in[6:4], uio_in[2:0], uio_oe[5], uio_out[5], uio_in[5], uio_in[7]};
+    wire _unused = &{ena, ui_in[7:5], ui_in[3:1], uio_in[2:0], uio_in[5:4], uio_in[7], uio_oe[5], uio_out[5]};
     
 endmodule
