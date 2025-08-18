@@ -1,21 +1,21 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Sun Aug 17 22:47:03 2025
+[*] Mon Aug 18 03:06:45 2025
 [*]
 [dumpfile] "/workspaces/VGA-Video-Player/test/tb.vcd"
-[dumpfile_mtime] "Sun Aug 17 22:40:33 2025"
-[dumpfile_size] 64679144
+[dumpfile_mtime] "Mon Aug 18 02:56:30 2025"
+[dumpfile_size] 8947652
 [savefile] "/workspaces/VGA-Video-Player/test/tb.gtkw"
-[timestart] 9675300000
-[size] 1680 978
-[pos] 0 0
-*-25.658348 9654000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 0
+[size] 1137 725
+[pos] 0 113
+*-20.658348 720000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] tb.
 [treeopen] tb.user_project.
 [sst_width] 214
 [signals_width] 230
 [sst_expanded] 1
-[sst_vpaned_height] 487
+[sst_vpaned_height] 335
 @28
 tb.user_project.clk
 tb.user_project.rst_n
@@ -52,32 +52,32 @@ tb.user_project.uio_in[7:0]
 -group_end
 @200
 -Bidir Output OE
-@800022
+@c00023
 tb.user_project.uio_oe[7:0]
 @28
-(0)tb.user_project.uio_oe[7:0]
++{tb.user_project.uio_oe[7] (nCS)} (0)tb.user_project.uio_oe[7:0]
 +{tb.user_project.uio_oe[6] (IO_3) } (1)tb.user_project.uio_oe[7:0]
 (2)tb.user_project.uio_oe[7:0]
-+{tb.user_project.uio_oe[4] (SCLK)} (3)tb.user_project.uio_oe[7:0]
++{tb.user_project.uio_oe[4] (HSYNC)} (3)tb.user_project.uio_oe[7:0]
 +{tb.user_project.uio_oe[3] (IO_0)} (4)tb.user_project.uio_oe[7:0]
-+{tb.user_project.uio_oe[2] (nCS)} (5)tb.user_project.uio_oe[7:0]
-+{tb.user_project.uio_oe[1] (VSYNC)} (6)tb.user_project.uio_oe[7:0]
-+{tb.user_project.uio_oe[0] (HSYNC)} (7)tb.user_project.uio_oe[7:0]
++{tb.user_project.uio_oe[2] (sclk)} (5)tb.user_project.uio_oe[7:0]
++{tb.user_project.uio_oe[1] (PWM)} (6)tb.user_project.uio_oe[7:0]
++{tb.user_project.uio_oe[0] (VSYNC)} (7)tb.user_project.uio_oe[7:0]
 @200
 -Bidir Output
-@1001200
+@1401201
 -group_end
 @800022
 tb.user_project.uio_out[7:0]
 @28
-(0)tb.user_project.uio_out[7:0]
++{tb.user_project.uio_out[7] (nCS)} (0)tb.user_project.uio_out[7:0]
 +{tb.user_project.uio_out[6] (IO_3)} (1)tb.user_project.uio_out[7:0]
 (2)tb.user_project.uio_out[7:0]
-+{tb.user_project.uio_out[4] (SCLK)} (3)tb.user_project.uio_out[7:0]
++{tb.user_project.uio_out[4] (HSYNC)} (3)tb.user_project.uio_out[7:0]
 +{tb.user_project.uio_out[3] (IO_0)} (4)tb.user_project.uio_out[7:0]
-+{tb.user_project.uio_out[2] (nCS)} (5)tb.user_project.uio_out[7:0]
-+{tb.user_project.uio_out[1] (VSYNC)} (6)tb.user_project.uio_out[7:0]
-+{tb.user_project.uio_out[0] (HSYNC)} (7)tb.user_project.uio_out[7:0]
++{tb.user_project.uio_out[2] (SCLK)} (5)tb.user_project.uio_out[7:0]
++{tb.user_project.uio_out[1] (PWM)} (6)tb.user_project.uio_out[7:0]
++{tb.user_project.uio_out[0] (VSYNC)} (7)tb.user_project.uio_out[7:0]
 @200
 -QSPI
 @c00022

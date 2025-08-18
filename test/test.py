@@ -9,8 +9,8 @@ import scripts.qspi_sim as qspi_sim
 
 def set_4bit_io(dut, value):
     dut.uio_in[3].value = (value >> 0) & 1  # IO_0
-    dut.ui_in[2].value  = (value >> 1) & 1  # IO_1
-    dut.ui_in[3].value  = (value >> 2) & 1  # IO_2
+    dut.ui_in[4].value  = (value >> 1) & 1  # IO_1
+    dut.ui_in[0].value  = (value >> 2) & 1  # IO_2
     dut.uio_in[6].value = (value >> 3) & 1  # IO_3
 
 def get_rgb(output_value):
@@ -22,31 +22,6 @@ def get_rgb(output_value):
     blue = ((output_value & 0b10000000) >> 7) << 1 | ((output_value & 0b1000000) >> 6)
 
     return (red << 5) | (green << 2) | blue
-
-# @cocotb.test()
-# async def test_pwm(dut):
-#     dut._log.info("Start")
-
-#     # Set the clock period to 10 us (100 KHz)
-#     clock = Clock(dut.clk, 40, units="ns")
-#     cocotb.start_soon(clock.start())
-
-#     # Reset
-#     dut._log.info("Reset")
-#     dut.ena.value = 1
-#     dut.ui_in.value = 0
-#     dut.uio_in.value = 0
-#     dut.uo_out.value = 0
-#     dut.uio_out.value = 0
-#     dut.rst_n.value = 0
-#     await ClockCycles(dut.clk, 2)
-#     dut.rst_n.value = 1
-
-#     dut._log.info("Test project behavior")
-
-#     await ClockCycles(dut.clk, 800*3)
-
-#     assert True
 
 @cocotb.test()
 async def test_project(dut):
@@ -69,7 +44,7 @@ async def test_project(dut):
     dut._log.info("Test project behavior")
 
     dut._log.info("Awaiting CS Low")
-    while dut.uio_out[2] != 0:
+    while dut.uio_out[7] != 0:
         await FallingEdge(dut.clk)
 
     instruction = 0x6b
@@ -121,7 +96,7 @@ async def test_project(dut):
 
         while True:
             await RisingEdge(dut.clk)
-            sclk_enabled = (dut.uio_out[4] == 1)
+            sclk_enabled = (dut.uio_out[2] == 1)
             await FallingEdge(dut.clk)
             
             # wait for the leading blank region to finish

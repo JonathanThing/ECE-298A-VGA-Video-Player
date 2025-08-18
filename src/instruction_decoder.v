@@ -61,7 +61,10 @@ module instruction_decoder (
                 stop_detected_reg <= 1'b0;
                 if (instruction >= 18'h3FF00) begin // Audio data
                     pwm_sample_reg <= instruction[7:0];
-                    have_data <= 1'b0;                      // Mark that we need new data instead
+                    run_counter <= run_counter + 1;             // Increment run counter 
+                    if (run_counter == 3) begin                 // Make sure that new data isn't loaded too quickly
+                        have_data <= 1'b0;                      // Mark that we need new data instead
+                    end
                 end 
             end
 
