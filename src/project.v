@@ -209,6 +209,7 @@ module tt_um_jonathan_thing_vga (
     // ------------------------- VGA Output -------------------------------
 
     wire req_next_pix; // Signal the instruction decoder to request the next pixel
+    wire mixed_region;  // Region where audio and colour can be buffered together
     wire [7:0] pwm_sample;
 
     instruction_decoder decoder(
@@ -217,7 +218,8 @@ module tt_um_jonathan_thing_vga (
 
         .instruction(data_6),
         .pixel_req(req_next_pix),
-        
+        .mixed_region(mixed_region),
+
         .cont_shift(global_shift),
         .red(red),
         .green(green),
@@ -232,7 +234,8 @@ module tt_um_jonathan_thing_vga (
 
         .hsync(HSYNC),
         .vsync(VSYNC),
-        .pixel_req(req_next_pix)
+        .pixel_req(req_next_pix),
+        .mixed_region(mixed_region)
     );
 
     pwm_module pwm_inst(

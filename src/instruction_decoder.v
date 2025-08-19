@@ -9,7 +9,8 @@ module instruction_decoder (
     input  wire         rst_n,         // Reset (active low)
     input  wire [17:0]  instruction,   // Only need 18 bits for instruction
     input  wire         pixel_req,     // Request for next pixel from VGA
-    
+    input  wire         mixed_region,  // Region where audio and colour can be buffered together
+
     output wire         cont_shift,
     output wire [2:0]   red,            // Red output (3 bits)
     output wire [2:0]   green,          // Green output (3 bits) 
@@ -62,8 +63,9 @@ module instruction_decoder (
                 if (instruction >= 18'h3FF00) begin // Audio data
                     pwm_sample_reg <= instruction[7:0];
                     run_counter <= run_counter + 1;             // Increment run counter 
-                    if (run_counter == 3) begin                 // Make sure that new data isn't loaded too quickly
+                    if ((run_counter == 157 && mixed_region) || run_counter == 798 ) begin                 // Make sure that new data isn't loaded too quickly
                         have_data <= 1'b0;                      // Mark that we need new data instead
+                        run_counter <= 10'b0;                   // Reset run counter
                     end
                 end 
             end
