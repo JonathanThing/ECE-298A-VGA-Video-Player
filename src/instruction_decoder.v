@@ -63,7 +63,7 @@ module instruction_decoder (
                 if (instruction >= 18'h3FF00) begin // Audio data
                     pwm_sample_reg <= instruction[7:0];
                     run_counter <= run_counter + 1;             // Increment run counter 
-                    if ((run_counter == 157 && mixed_region) || run_counter == 798 ) begin                 // Make sure that new data isn't loaded too quickly
+                    if ((run_counter == 157 && mixed_region) || run_counter == 799 ) begin                 // Make sure that new data isn't loaded too quickly
                         have_data <= 1'b0;                      // Mark that we need new data instead
                         run_counter <= 10'b0;                   // Reset run counter
                     end

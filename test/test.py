@@ -14,12 +14,12 @@ def set_4bit_io(dut, value):
     dut.uio_in[6].value = (value >> 3) & 1  # IO_3
 
 def get_rgb(output_value):
-    # red is bits 2,1,0
-    # green is bits 5,4,3
-    # blue is bits 7,6
-    red = ((output_value & 0b100) >> 2) << 2 | ((output_value & 0b10) >> 1) << 1 | (output_value & 0b1)
-    green = ((output_value & 0b100000) >> 5) << 2 | ((output_value & 0b10000) >> 4) << 1 | ((output_value & 0b1000) >> 3)
-    blue = ((output_value & 0b10000000) >> 7) << 1 | ((output_value & 0b1000000) >> 6)
+    # red is bits 5,0,4
+    # green is bits 2,6,1
+    # blue is bits 3,7
+    red = ((output_value >> 5 & 1) << 2) | ((output_value & 1) << 1) | (output_value >> 4 & 1)
+    green = ((output_value >> 2 & 1) << 2) | ((output_value >> 6 & 1) << 1) | (output_value >> 1 & 1)
+    blue = ((output_value >> 3 & 1) << 1) | (output_value >> 7 & 1)
 
     return (red << 5) | (green << 2) | blue
 

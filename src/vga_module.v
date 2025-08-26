@@ -57,7 +57,7 @@ module vga_module (
     // Pixel request: assert when in the display area
     assign pixel_req = h_display_area && v_display_area || v_edge_case || h_edge_case;
 
-    assign mixed_region = v_display_area && v_counter != 479; // Region where audio and colour can be buffered together
+    assign mixed_region = (v_display_area && v_counter != 479) || v_counter == 524; // Region where audio and colour can be buffered together
 
     // Main VGA logic
     always @(posedge clk) begin
