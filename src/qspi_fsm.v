@@ -47,7 +47,6 @@ module qspi_fsm (
     reg        di_reg;      // Flash IC Data Input
     reg        oe_sig;      // Output enable for HOLD and oe, 1 for output; 0 for input
     reg        hold_n_reg;  // IO3 Hold register value
-    reg     mem_ready_reg;
 
     // SPI clock is inverted system clock
     assign spi_clk = !clk & cur_state != WAIT_CONSUME; // Inverted Clk only if not waiting for data
@@ -84,7 +83,6 @@ module qspi_fsm (
             bit_counter <= 0;
             valid_reg <= 1'b0;
             di_reg <= 1'b0;
-            mem_ready_reg <= 1'b0;
         end else begin
             cur_state <= next_state;    // Update current state to next state
 
@@ -143,8 +141,6 @@ module qspi_fsm (
                             if (spi_io[1] == 1'b1) begin // If busy
                                 bit_counter <= 0; // Reset bit counter
                             end 
-                        end else begin
-                            mem_ready_reg <= 0;
                         end
                     end
 
