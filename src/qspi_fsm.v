@@ -64,10 +64,10 @@ module qspi_fsm (
     always @(*) begin
         next_state = cur_state;
         case (cur_state)
-            IDLE:           if (bit_counter == 3) next_state = RESET_PAGE;                                   // Start the process by sending command (0x6B)
-            RESET_PAGE:     if (bit_counter == 35) next_state = REQ_STATUS;                      // Extra clock cycle for cs reset
-            REQ_STATUS:     if (bit_counter == 14) next_state = POLL_STATUS;                       // Extra clock cycle
-            POLL_STATUS:    if (bit_counter == 12) next_state = SEND_CMD;                       // Extra clock cycle
+            IDLE:           if (bit_counter == 3) next_state = RESET_PAGE;                      // Start the process by sending command (0x6B)
+            RESET_PAGE:     if (bit_counter == 35) next_state = REQ_STATUS;                     // Extra clock cycle for cs reset
+            REQ_STATUS:     if (bit_counter == 15) next_state = POLL_STATUS;                    // 
+            POLL_STATUS:    if (bit_counter == 12) next_state = SEND_CMD;                       // Extra cycle for cs margin
             SEND_CMD:       if (bit_counter == 7) next_state = DUMMY_CYCLES;                    // Once done sending command, send 32 dummy cycles
             DUMMY_CYCLES:   if (bit_counter == 31)  next_state = READ_DATA;                     // Once done sending the 32 dummy cycles, start reading data
             READ_DATA:      if (bit_counter == 5 && shift_data == 0) next_state = WAIT_CONSUME; // After reading the nibble, if the data is not to be shifted, wait
@@ -96,16 +96,15 @@ module qspi_fsm (
                 end
             end else begin
                 di_reg <= 1'b0;
-                bit_counter <= 0;
+                bit_counter <= bit_counter + 1;
                 valid_reg <= 1'b0;
 
                 case (next_state)
                     IDLE: begin
-                        bit_counter <= bit_counter + 1;
+
                     end
 
                     RESET_PAGE: begin
-                        bit_counter <= bit_counter + 1;
                         case (bit_counter)      // Get next value given current bit
                             0: di_reg <= 1'b0;  // bit 6
                             1: di_reg <= 1'b0;  // bit 5
@@ -119,7 +118,6 @@ module qspi_fsm (
                     end
 
                     REQ_STATUS: begin 
-                        bit_counter <= bit_counter + 1;
                         // 0Fh then Cxh
                         case (bit_counter)      // Get next value given current bit
                             0: di_reg <= 1'b0;  // bit 6
@@ -136,7 +134,6 @@ module qspi_fsm (
                     end
 
                     POLL_STATUS: begin
-                        bit_counter <= bit_counter + 1;
                         if (bit_counter == 7) begin
                             if (spi_io[1] == 1'b1) begin // If busy
                                 bit_counter <= 0; // Reset bit counter
@@ -145,7 +142,6 @@ module qspi_fsm (
                     end
 
                     SEND_CMD: begin
-                        bit_counter <= bit_counter + 1;
                         case (bit_counter)      // Get next value given current bit
                             0: di_reg <= 1'b1;  // bit 6
                             1: di_reg <= 1'b1;  // bit 5
@@ -159,7 +155,6 @@ module qspi_fsm (
                     end
 
                     DUMMY_CYCLES: begin   
-                        bit_counter <= bit_counter + 1;
                     end
 
                     READ_DATA: begin
@@ -167,15 +162,17 @@ module qspi_fsm (
                             bit_counter <= 0;
                             valid_reg <= 1'b1;
                         end else begin              // Else increment the bit counter
-                            bit_counter <= bit_counter + 1;
+                            
                         end
                     end
 
                     WAIT_CONSUME: begin
+                        bit_counter <= 0;
                         valid_reg <= 1'b1;
                     end
 
                     default: begin // IDLE, and erroneous states
+                        bit_counter <= 0;
                         // Do nothing, keep the default values
                     end
                 endcase                    
@@ -208,7 +205,7 @@ module qspi_fsm (
                 end
 
                 POLL_STATUS: begin
-                    if (bit_counter > 8 && cur_state == POLL_STATUS) begin
+                    if (bit_counter > 7 && cur_state == POLL_STATUS) begin
                         cs_n_reg <= 1'b1;   // Pull CS high after transmission
                     end else begin
                         cs_n_reg <= 1'b0;   // Want to pull CS low during transmission
