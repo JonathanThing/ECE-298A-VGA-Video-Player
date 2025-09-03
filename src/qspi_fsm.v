@@ -34,7 +34,6 @@ module qspi_fsm (
     localparam READ_DATA    = 3'b011;
     localparam WAIT_CONSUME = 3'b101;
     
-
     // Internal signals
     reg [2:0]  cur_state;
     reg [2:0]  next_state;
@@ -49,7 +48,7 @@ module qspi_fsm (
     reg        hold_n_reg;  // IO3 Hold register value
 
     // SPI clock is inverted system clock
-    assign spi_clk = !clk & cur_state != WAIT_CONSUME; // Inverted Clk only if not waiting for data
+    assign spi_clk = (cur_state != WAIT_CONSUME) ? ~clk : 1'b0;
     assign spi_cs_n = cs_n_reg;
     assign spi_di = di_reg;
     assign spi_hold_n = hold_n_reg;

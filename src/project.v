@@ -44,6 +44,7 @@ module tt_um_jonathan_thing_vga (
     wire [2:0] red;
     wire [2:0] green;
     wire [1:0] blue;
+    
 
     // IO mapping
     assign uio_out = {
@@ -106,12 +107,12 @@ module tt_um_jonathan_thing_vga (
 
     // Software reset signals
     wire stop_detected;
-    reg reset_n_req;    
+    reg reset_n_req;  
+    wire system_reset_n = rst_n & reset_n_req; 
 
     // Synchronous reset signal triggered by stop signal
     always @(posedge clk) begin
-        if (!rst_n) reset_n_req <= 1;
-        else if (stop_detected) reset_n_req <= 0;
+        if (rst_n && stop_detected) reset_n_req <= 0;
         else reset_n_req <= 1;
     end
 
@@ -119,7 +120,7 @@ module tt_um_jonathan_thing_vga (
 
     qspi_fsm qspi_cont_inst (
         .clk(clk),
-        .rst_n(rst_n & reset_n_req),
+        .rst_n(system_reset_n),
         .spi_clk(SCLK),
         .spi_cs_n(nCS),
         .spi_di(DI),
@@ -142,7 +143,7 @@ module tt_um_jonathan_thing_vga (
 
     data_buffer buf1(
         .clk(clk),
-        .rst_n(rst_n & reset_n_req),
+        .rst_n(system_reset_n),
         .shift_data(global_shift | data_2_empty | data_3_empty | data_4_empty | lower_shift),
         
         .data_in(spi_data),
@@ -153,7 +154,7 @@ module tt_um_jonathan_thing_vga (
 
     data_buffer buf2(
         .clk(clk),
-        .rst_n(rst_n & reset_n_req),
+        .rst_n(system_reset_n),
         .shift_data(global_shift | data_3_empty | data_4_empty | lower_shift),
 
         .data_in(data_1),
@@ -164,7 +165,7 @@ module tt_um_jonathan_thing_vga (
 
     data_buffer buf3(
         .clk(clk),
-        .rst_n(rst_n & reset_n_req),
+        .rst_n(system_reset_n),
         .shift_data(global_shift | data_4_empty | lower_shift),
 
         .data_in(data_2),
@@ -175,7 +176,7 @@ module tt_um_jonathan_thing_vga (
 
     data_buffer buf4(
         .clk(clk),
-        .rst_n(rst_n & reset_n_req),
+        .rst_n(system_reset_n),
         .shift_data(global_shift | lower_shift),
 
         .data_in(data_3),
@@ -186,7 +187,7 @@ module tt_um_jonathan_thing_vga (
 
     data_buffer buf5(
         .clk(clk),
-        .rst_n(rst_n & reset_n_req),
+        .rst_n(system_reset_n),
         .shift_data(global_shift | data_5_empty | data_6_empty),
 
         .data_in(data_4),
@@ -197,7 +198,7 @@ module tt_um_jonathan_thing_vga (
 
     data_buffer buf6(
         .clk(clk),
-        .rst_n(rst_n & reset_n_req),
+        .rst_n(system_reset_n),
         .shift_data(global_shift | data_6_empty),
 
         .data_in(data_5),
@@ -214,7 +215,7 @@ module tt_um_jonathan_thing_vga (
 
     instruction_decoder decoder(
         .clk(clk),
-        .rst_n(rst_n & reset_n_req),
+        .rst_n(system_reset_n),
 
         .instruction(data_6),
         .pixel_req(req_next_pix),
@@ -230,7 +231,7 @@ module tt_um_jonathan_thing_vga (
 
     vga_module vga_inst(
         .clk(clk),
-        .rst_n(rst_n & reset_n_req),
+        .rst_n(system_reset_n),
 
         .hsync(HSYNC),
         .vsync(VSYNC),
@@ -240,7 +241,7 @@ module tt_um_jonathan_thing_vga (
 
     pwm_module pwm_inst(
         .clk(clk),
-        .rst_n(rst_n & reset_n_req),
+        .rst_n(system_reset_n),
 
         .sample(pwm_sample),
         .pwm(PWM)
