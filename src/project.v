@@ -239,13 +239,15 @@ module tt_um_jonathan_thing_vga (
         .mixed_region(mixed_region)
     );
 
-    pwm_module pwm_inst(
-        .clk(clk),
-        .rst_n(system_reset_n),
+    // pwm_module pwm_inst(
+    //     .clk(clk),
+    //     .rst_n(system_reset_n),
 
-        .sample(pwm_sample),
-        .pwm(PWM)
-    );
+    //     .sample(pwm_sample),
+    //     .pwm(PWM)
+    // );
+
+    assign PWM = 1'b1;
     
     // Unused signals
     wire _unused = &{ena, ui_in[7:5], ui_in[3:1], uio_in[2:0], uio_in[5:4], uio_in[7], uio_oe[5], uio_out[5]};
