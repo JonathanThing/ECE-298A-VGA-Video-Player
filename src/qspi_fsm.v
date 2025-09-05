@@ -65,8 +65,8 @@ module qspi_fsm (
         next_state = cur_state;
         case (cur_state)
             IDLE:           if (bit_counter == 3) next_state = RESET_PAGE;                      // Start the process by sending command (0x6B)
-            RESET_PAGE:     if (bit_counter == 35) next_state = AWAIT_READY;                     // Extra clock cycle for cs reset                 // 
-            AWAIT_READY:    if (!vsync) next_state = SEND_CMD;                       // Extra cycle for read latency and cs margin
+            RESET_PAGE:     if (bit_counter == 35) next_state = AWAIT_READY;                    // Extra clock cycle for cs reset
+            AWAIT_READY:    if (!vsync) next_state = SEND_CMD;                                  // Extra cycle for read latency and cs margin
             SEND_CMD:       if (bit_counter == 7) next_state = DUMMY_CYCLES;                    // Once done sending command, send 32 dummy cycles
             DUMMY_CYCLES:   if (bit_counter == 31)  next_state = READ_DATA;                     // Once done sending the 32 dummy cycles, start reading data
             READ_DATA:      if (bit_counter == 5 && shift_data == 0) next_state = WAIT_CONSUME; // After reading the nibble, if the data is not to be shifted, wait
