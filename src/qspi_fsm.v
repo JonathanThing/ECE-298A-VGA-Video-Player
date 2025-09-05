@@ -204,6 +204,7 @@ module qspi_fsm (
                 end
 
                 POLL_STATUS: begin
+                    oe_sig <= 1'b0;    // Set to input mode
                     if (bit_counter > 7 && cur_state == POLL_STATUS) begin
                         cs_n_reg <= 1'b1;   // Pull CS high after transmission
                     end else begin
@@ -212,6 +213,7 @@ module qspi_fsm (
                 end
 
                 SEND_CMD: begin
+                    oe_sig <= 1'b1;    // Set to output mode
                     cs_n_reg <= 1'b0;   // Want to pull CS low during transmission
                 end
                 DUMMY_CYCLES: begin
