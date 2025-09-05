@@ -96,17 +96,14 @@ module qspi_fsm (
                 if (next_state == WAIT_CONSUME) begin   // If going to wait state, set valid to be 1
                     valid_reg <= 1'b1;
                 end
-            end else begin
+            end else begin             // Same state
                 di_reg <= 1'b0;
                 bit_counter <= bit_counter + 1;
                 valid_reg <= 1'b0;
 
                 case (next_state)
-                    IDLE: begin
-
-                    end
-
                     RESET_PAGE: begin
+                        // 0x13, Page Data Read
                         case (bit_counter)      // Get next value given current bit
                             0: di_reg <= 1'b0;  // bit 6
                             1: di_reg <= 1'b0;  // bit 5
@@ -120,7 +117,7 @@ module qspi_fsm (
                     end
 
                     REQ_STATUS: begin 
-                        // 0Fh then Cxh
+                        // 0Fh then Address Cxh, Read Status Register-3
                         case (bit_counter)      // Get next value given current bit
                             0: di_reg <= 1'b0;  // bit 6
                             1: di_reg <= 1'b0;  // bit 5
@@ -129,25 +126,28 @@ module qspi_fsm (
                             4: di_reg <= 1'b1;  // bit 2
                             5: di_reg <= 1'b1;  // bit 1
                             6: di_reg <= 1'b1;  // bit 0
-                            7: di_reg <= 1'b1;  // Address of status bit 7
-                            8: di_reg <= 1'b1;  // Address of status bit 6
+                            7: di_reg <= 1'b1;  // Address of status register bit 7
+                            8: di_reg <= 1'b1;  // Address of status register bit 6
                             default: di_reg <= 1'b0;
                         endcase  
                     end
 
                     POLL_STATUS: begin
+                        // Pause the clock when reaches the 8th bit
                         if (bit_counter >= 7 && bit_counter < 13) begin
                             pauseClk <= 1'b1;
-                            if (bit_counter == 10 && spi_io[1] == 1'b1) begin // If busy
-                                bit_counter <= 0; // Reset bit counter
-                                pauseClk <= 1'b0;
+                            // Wait a few cycles before checking the busy bit
+                            if (bit_counter == 10 && spi_io[1] == 1'b1) begin // If still busy
+                                bit_counter <= 0; // Reset bit counter to continue polling
+                                pauseClk <= 1'b0; // Release the clock
                             end 
-                        end else begin
+                        end else begin  // Release the clock because no longer busy
                             pauseClk <= 1'b0; 
                         end
                     end
 
                     SEND_CMD: begin
+                        // 0x6B, Fast Read Quad I/O
                         case (bit_counter)      // Get next value given current bit
                             0: di_reg <= 1'b1;  // bit 6
                             1: di_reg <= 1'b1;  // bit 5
@@ -160,26 +160,19 @@ module qspi_fsm (
                         endcase    
                     end
 
-                    DUMMY_CYCLES: begin   
-                    end
-
                     READ_DATA: begin
                         if (bit_counter == 5) begin // Reset if one message done
                             bit_counter <= 0;
                             valid_reg <= 1'b1;
-                        end else begin              // Else increment the bit counter
-                            
                         end
                     end
 
-                    WAIT_CONSUME: begin
+                    WAIT_CONSUME: begin     
                         bit_counter <= 0;
                         valid_reg <= 1'b1;
                     end
 
-                    default: begin // IDLE, and erroneous states
-                        bit_counter <= 0;
-                        // Do nothing, keep the default values
+                    default: begin // IDLE and DUMMY_CYCLES
                     end
                 endcase                    
             end
@@ -238,9 +231,6 @@ module qspi_fsm (
         end
     end
 
-    reg [7:0] posEdgeBuffer = 8'b0;
-    reg [7:0] negEdgeBuffer = 8'b0;
-
     // Read Instruction Buffer Logic, (Looks at current state not next state)
     always @(posedge clk) begin
         if (!rst_n) begin
@@ -249,22 +239,6 @@ module qspi_fsm (
             if (cur_state == READ_DATA) begin 
                 instruction_buf <= {instruction_buf[19:0], spi_io};
             end 
-        end
-    end
-
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            posEdgeBuffer <= 8'b0;
-        end else begin 
-            posEdgeBuffer <= {posEdgeBuffer[3:0], spi_io[3:0]};
-        end
-    end
-
-    always @(negedge clk) begin
-        if (!rst_n) begin
-            negEdgeBuffer <= 8'b0;
-        end else begin 
-            negEdgeBuffer <= {negEdgeBuffer[3:0], spi_io[3:0]};
         end
     end
 

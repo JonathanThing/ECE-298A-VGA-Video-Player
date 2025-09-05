@@ -1,9 +1,6 @@
-// PWM plan.
-// Send in 2 signals at once,
-// Counter for half the row,
-// Then swap and then thing
 `default_nettype none
 
+// Generate PWM signal from 8-bit input
 module pwm_module(
     input wire clk,
     input wire rst_n,
@@ -11,6 +8,7 @@ module pwm_module(
 
     output wire pwm
 );
+
     reg [7:0] pwm_counter;
 
     always @(posedge(clk)) begin
