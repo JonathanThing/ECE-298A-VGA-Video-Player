@@ -4,24 +4,24 @@
  */
 
 module qspi_fsm (
-    input  wire        clk,        
-    input  wire        rst_n,      // Reset (active low)
-    
+    input wire          clk,
+    input wire          rst_n,      // Reset (active low)
+
     // SPI Flash interface
-    output wire        spi_clk,    // SPI clock = !clk
-    output wire        spi_cs_n,   // Chip select (active low)
-    output wire        spi_di,     // DI (data input to flash) - IO0
-    output wire        spi_hold_n,   // HOLD (We have to hold it high during setup)
+    output wire         spi_clk,    // SPI clock = ~clk
+    output wire         spi_cs_n,   // Chip select (active low)
+    output wire         spi_di,     // DI (data input to flash) - IO0
+    output wire         spi_hold_n, // HOLD (We have to hold it high during setup)
 
     // Input Wires
-    input wire [3:0]  spi_io,
-    input wire        shift_data,      // Signal to have data shifted 
+    input wire [3:0]    spi_io,
+    input wire          shift_data, // Signal to have data shifted
 
     // Output interface
-    output wire [17:0] instruction,        // 18-bit data output
-    output wire        spi_di_oe,
-    output wire        spi_hold_n_oe,
-    output wire        valid           // High when instruction is valid
+    output wire [17:0]  instruction,    // 18-bit data output
+    output wire         spi_di_oe,  
+    output wire         spi_hold_n_oe,
+    output wire         valid           // High when instruction is valid
 );
 
     // State machine states
@@ -39,15 +39,15 @@ module qspi_fsm (
     reg [2:0]  next_state;
     reg [5:0]  bit_counter;
     reg [23:0] instruction_buf;
+    reg pauseClk;
 
     // Output Registers
-    reg        valid_reg;
-    reg        cs_n_reg;
-    reg        di_reg;      // Flash IC Data Input
-    reg        oe_sig;      // Output enable for HOLD and oe, 1 for output; 0 for input
-    reg        hold_n_reg;  // IO3 Hold register value
-
-    reg     pauseClk;
+    reg valid_reg;
+    reg cs_n_reg;
+    reg di_reg;         // Flash IC Data Input
+    reg hold_oe_reg;    // Output enable for HOLD
+    reg d0_oe_reg;      // Output enable for D0
+    reg hold_n_reg;     // IO3 Hold register value
 
     // SPI clock is inverted system clock
     assign spi_clk = (cur_state != WAIT_CONSUME && ~pauseClk) ? ~clk : 1'b0;
@@ -58,10 +58,10 @@ module qspi_fsm (
     // Output assignments
     assign instruction = instruction_buf[17:0];
     assign valid = valid_reg;
-    assign spi_di_oe = oe_sig;
-    assign spi_hold_n_oe = oe_sig;
+    assign spi_di_oe = d0_oe_reg;
+    assign spi_hold_n_oe = hold_oe_reg;
 
-    // FSM State Logic
+    // FSM Next State Combinational Logic
     always @(*) begin
         next_state = cur_state;
         case (cur_state)
@@ -77,7 +77,7 @@ module qspi_fsm (
         endcase
     end
 
-    // Next State Logic
+    // FF Logic, handles data output, state transitions, and bit counting
     always @(posedge clk) begin
         if (!rst_n) begin
             cur_state <= IDLE;
@@ -86,7 +86,7 @@ module qspi_fsm (
             di_reg <= 1'b0;
             pauseClk <= 1'b0;
         end else begin
-            cur_state <= next_state;    // Update current state to next state
+            cur_state <= next_state; // Update current state to next state
 
             if (next_state != cur_state) begin // State transition
                 // Reset the bit counter and data output
@@ -96,12 +96,12 @@ module qspi_fsm (
                 if (next_state == WAIT_CONSUME) begin   // If going to wait state, set valid to be 1
                     valid_reg <= 1'b1;
                 end
-            end else begin             // Same state
+            end else begin // Same state
                 di_reg <= 1'b0;
                 bit_counter <= bit_counter + 1;
                 valid_reg <= 1'b0;
 
-                case (next_state)
+                case (next_state) // Determine data output values
                     RESET_PAGE: begin
                         // 0x13, Page Data Read
                         case (bit_counter)      // Get next value given current bit
@@ -179,15 +179,17 @@ module qspi_fsm (
         end
     end
 
-    // Output Logic
+    // FF logic, handles chip select and output enables
     always @(posedge clk) begin
         if (!rst_n) begin
-            oe_sig <= 1'b1;
+            hold_oe_reg <= 1'b1;
+            d0_oe_reg <= 1'b1;
             hold_n_reg <= 1'b1;
             cs_n_reg <= 1'b1;
         end else begin
             cs_n_reg <= 1'b1;
-            oe_sig <= 1'b1;
+            hold_oe_reg <= 1'b1;
+            d0_oe_reg <= 1'b1;
             hold_n_reg <= 1'b1;
 
             case (next_state)
@@ -204,7 +206,7 @@ module qspi_fsm (
                 end
 
                 POLL_STATUS: begin
-                    oe_sig <= 1'b0;    // Set to input mode
+                    d0_oe_reg <= 1'b0;    // Set to input mode
                     if (bit_counter > 10 && cur_state == POLL_STATUS) begin
                         cs_n_reg <= 1'b1;   // Pull CS high after transmission
                     end else begin
@@ -213,7 +215,7 @@ module qspi_fsm (
                 end
 
                 SEND_CMD: begin
-                    oe_sig <= 1'b1;    // Set to output mode
+                    d0_oe_reg <= 1'b1;    // Set to output mode
                     cs_n_reg <= 1'b0;   // Want to pull CS low during transmission
                 end
                 DUMMY_CYCLES: begin
@@ -221,7 +223,8 @@ module qspi_fsm (
                 end
                 READ_DATA, WAIT_CONSUME: begin
                     cs_n_reg <= 1'b0;
-                    oe_sig <= 1'b0;
+                    hold_oe_reg <= 1'b0;
+                    d0_oe_reg <= 1'b0;
                     hold_n_reg <= 1'b0; 
                 end 
                 default: begin // IDLE, and erroneous states
