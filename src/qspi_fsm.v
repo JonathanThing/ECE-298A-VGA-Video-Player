@@ -47,8 +47,10 @@ module qspi_fsm (
     reg        oe_sig;      // Output enable for HOLD and oe, 1 for output; 0 for input
     reg        hold_n_reg;  // IO3 Hold register value
 
+    reg     pauseClk;
+
     // SPI clock is inverted system clock
-    assign spi_clk = (cur_state != WAIT_CONSUME) ? ~clk : 1'b0;
+    assign spi_clk = (cur_state != WAIT_CONSUME && ~pauseClk) ? ~clk : 1'b0;
     assign spi_cs_n = cs_n_reg;
     assign spi_di = di_reg;
     assign spi_hold_n = hold_n_reg;
@@ -66,7 +68,7 @@ module qspi_fsm (
             IDLE:           if (bit_counter == 3) next_state = RESET_PAGE;                      // Start the process by sending command (0x6B)
             RESET_PAGE:     if (bit_counter == 35) next_state = REQ_STATUS;                     // Extra clock cycle for cs reset
             REQ_STATUS:     if (bit_counter == 15) next_state = POLL_STATUS;                    // 
-            POLL_STATUS:    if (bit_counter == 12) next_state = SEND_CMD;                       // Extra cycle for cs margin
+            POLL_STATUS:    if (bit_counter == 14) next_state = SEND_CMD;                       // Extra cycle for read latency and cs margin
             SEND_CMD:       if (bit_counter == 7) next_state = DUMMY_CYCLES;                    // Once done sending command, send 32 dummy cycles
             DUMMY_CYCLES:   if (bit_counter == 31)  next_state = READ_DATA;                     // Once done sending the 32 dummy cycles, start reading data
             READ_DATA:      if (bit_counter == 5 && shift_data == 0) next_state = WAIT_CONSUME; // After reading the nibble, if the data is not to be shifted, wait
@@ -82,6 +84,7 @@ module qspi_fsm (
             bit_counter <= 0;
             valid_reg <= 1'b0;
             di_reg <= 1'b0;
+            pauseClk <= 1'b0;
         end else begin
             cur_state <= next_state;    // Update current state to next state
 
@@ -133,10 +136,14 @@ module qspi_fsm (
                     end
 
                     POLL_STATUS: begin
-                        if (bit_counter == 7) begin
-                            if (spi_io[1] == 1'b1) begin // If busy
+                        if (bit_counter >= 7 && bit_counter < 14) begin
+                            pauseClk <= 1'b1;
+                            if (bit_counter == 10 && spi_io[1] == 1'b1) begin // If busy
                                 bit_counter <= 0; // Reset bit counter
+                                pauseClk <= 1'b0;
                             end 
+                        end else begin
+                            pauseClk <= 1'b0; 
                         end
                     end
 
@@ -205,7 +212,7 @@ module qspi_fsm (
 
                 POLL_STATUS: begin
                     oe_sig <= 1'b0;    // Set to input mode
-                    if (bit_counter > 7 && cur_state == POLL_STATUS) begin
+                    if (bit_counter > 10 && cur_state == POLL_STATUS) begin
                         cs_n_reg <= 1'b1;   // Pull CS high after transmission
                     end else begin
                         cs_n_reg <= 1'b0;   // Want to pull CS low during transmission
@@ -249,9 +256,7 @@ module qspi_fsm (
         if (!rst_n) begin
             posEdgeBuffer <= 8'b0;
         end else begin 
-            if (cur_state == READ_DATA) begin 
-                posEdgeBuffer <= {posEdgeBuffer[5:0], spi_io[2:1]};
-            end 
+            posEdgeBuffer <= {posEdgeBuffer[3:0], spi_io[3:0]};
         end
     end
 
@@ -259,9 +264,7 @@ module qspi_fsm (
         if (!rst_n) begin
             negEdgeBuffer <= 8'b0;
         end else begin 
-            if (cur_state == READ_DATA) begin 
-                negEdgeBuffer <= {negEdgeBuffer[5:0], spi_io[2:1]};
-            end 
+            negEdgeBuffer <= {negEdgeBuffer[3:0], spi_io[3:0]};
         end
     end
 
