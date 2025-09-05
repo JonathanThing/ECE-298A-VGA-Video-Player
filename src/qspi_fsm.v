@@ -136,7 +136,7 @@ module qspi_fsm (
                     end
 
                     POLL_STATUS: begin
-                        if (bit_counter >= 7 && bit_counter < 14) begin
+                        if (bit_counter >= 7 && bit_counter < 13) begin
                             pauseClk <= 1'b1;
                             if (bit_counter == 10 && spi_io[1] == 1'b1) begin // If busy
                                 bit_counter <= 0; // Reset bit counter
