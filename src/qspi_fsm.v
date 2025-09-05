@@ -16,6 +16,7 @@ module qspi_fsm (
     // Input Wires
     input wire [3:0]    spi_io,
     input wire          shift_data, // Signal to have data shifted
+    input wire          vsync,      // Vertical sync signal from VGA controller, used as known ready point
 
     // Output interface
     output wire [17:0]  instruction,    // 18-bit data output
@@ -27,8 +28,7 @@ module qspi_fsm (
     // State machine states
     localparam IDLE         = 3'b100;
     localparam RESET_PAGE   = 3'b110;
-    localparam REQ_STATUS   = 3'b000;
-    localparam POLL_STATUS  = 3'b111;
+    localparam AWAIT_READY  = 3'b111;
     localparam SEND_CMD     = 3'b001;
     localparam DUMMY_CYCLES = 3'b010;
     localparam READ_DATA    = 3'b011;
@@ -39,7 +39,6 @@ module qspi_fsm (
     reg [2:0]  next_state;
     reg [5:0]  bit_counter;
     reg [23:0] instruction_buf;
-    reg pauseClk;
 
     // Output Registers
     reg valid_reg;
@@ -50,7 +49,7 @@ module qspi_fsm (
     reg hold_n_reg;     // IO3 Hold register value
 
     // SPI clock is inverted system clock
-    assign spi_clk = (cur_state != WAIT_CONSUME && ~pauseClk) ? ~clk : 1'b0;
+    assign spi_clk = (cur_state == WAIT_CONSUME || cur_state == AWAIT_READY) ? 1'b0 : ~clk;
     assign spi_cs_n = cs_n_reg;
     assign spi_di = di_reg;
     assign spi_hold_n = hold_n_reg;
@@ -66,9 +65,8 @@ module qspi_fsm (
         next_state = cur_state;
         case (cur_state)
             IDLE:           if (bit_counter == 3) next_state = RESET_PAGE;                      // Start the process by sending command (0x6B)
-            RESET_PAGE:     if (bit_counter == 35) next_state = REQ_STATUS;                     // Extra clock cycle for cs reset
-            REQ_STATUS:     if (bit_counter == 15) next_state = POLL_STATUS;                    // 
-            POLL_STATUS:    if (bit_counter == 14) next_state = SEND_CMD;                       // Extra cycle for read latency and cs margin
+            RESET_PAGE:     if (bit_counter == 35) next_state = AWAIT_READY;                     // Extra clock cycle for cs reset                 // 
+            AWAIT_READY:    if (!vsync) next_state = SEND_CMD;                       // Extra cycle for read latency and cs margin
             SEND_CMD:       if (bit_counter == 7) next_state = DUMMY_CYCLES;                    // Once done sending command, send 32 dummy cycles
             DUMMY_CYCLES:   if (bit_counter == 31)  next_state = READ_DATA;                     // Once done sending the 32 dummy cycles, start reading data
             READ_DATA:      if (bit_counter == 5 && shift_data == 0) next_state = WAIT_CONSUME; // After reading the nibble, if the data is not to be shifted, wait
@@ -84,7 +82,6 @@ module qspi_fsm (
             bit_counter <= 0;
             valid_reg <= 1'b0;
             di_reg <= 1'b0;
-            pauseClk <= 1'b0;
         end else begin
             cur_state <= next_state; // Update current state to next state
 
@@ -116,36 +113,6 @@ module qspi_fsm (
                         endcase  
                     end
 
-                    REQ_STATUS: begin 
-                        // 0Fh then Address Cxh, Read Status Register-3
-                        case (bit_counter)      // Get next value given current bit
-                            0: di_reg <= 1'b0;  // bit 6
-                            1: di_reg <= 1'b0;  // bit 5
-                            2: di_reg <= 1'b0;  // bit 4
-                            3: di_reg <= 1'b1;  // bit 3
-                            4: di_reg <= 1'b1;  // bit 2
-                            5: di_reg <= 1'b1;  // bit 1
-                            6: di_reg <= 1'b1;  // bit 0
-                            7: di_reg <= 1'b1;  // Address of status register bit 7
-                            8: di_reg <= 1'b1;  // Address of status register bit 6
-                            default: di_reg <= 1'b0;
-                        endcase  
-                    end
-
-                    POLL_STATUS: begin
-                        // Pause the clock when reaches the 8th bit
-                        if (bit_counter >= 7 && bit_counter < 13) begin
-                            pauseClk <= 1'b1;
-                            // Wait a few cycles before checking the busy bit
-                            if (bit_counter == 10 && spi_io[1] == 1'b1) begin // If still busy
-                                bit_counter <= 0; // Reset bit counter to continue polling
-                                pauseClk <= 1'b0; // Release the clock
-                            end 
-                        end else begin  // Release the clock because no longer busy
-                            pauseClk <= 1'b0; 
-                        end
-                    end
-
                     SEND_CMD: begin
                         // 0x6B, Fast Read Quad I/O
                         case (bit_counter)      // Get next value given current bit
@@ -172,7 +139,8 @@ module qspi_fsm (
                         valid_reg <= 1'b1;
                     end
 
-                    default: begin // IDLE and DUMMY_CYCLES
+                    default: begin // IDLE and DUMMY_CYCLES, erroneous states
+                        // Do nothing, keep the default values
                     end
                 endcase                    
             end
@@ -200,20 +168,6 @@ module qspi_fsm (
                         cs_n_reg <= 1'b0;   // Want to pull CS low during transmission
                     end
                 end
-
-                REQ_STATUS: begin
-                    cs_n_reg <= 1'b0;   // Want to pull CS low during transmission
-                end
-
-                POLL_STATUS: begin
-                    d0_oe_reg <= 1'b0;    // Set to input mode
-                    if (bit_counter > 10 && cur_state == POLL_STATUS) begin
-                        cs_n_reg <= 1'b1;   // Pull CS high after transmission
-                    end else begin
-                        cs_n_reg <= 1'b0;   // Want to pull CS low during transmission
-                    end
-                end
-
                 SEND_CMD: begin
                     d0_oe_reg <= 1'b1;    // Set to output mode
                     cs_n_reg <= 1'b0;   // Want to pull CS low during transmission

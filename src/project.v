@@ -133,7 +133,8 @@ module tt_um_jonathan_thing_vga (
 
         .instruction(spi_data),
         .valid(spi_ready),       
-        .shift_data(global_shift | lower_shift | upper_shift)
+        .shift_data(global_shift | lower_shift | upper_shift),
+        .vsync(VSYNC)
     );
 
     // ------------------------------- Data Buffers -------------------------------

@@ -69,42 +69,6 @@ async def test_project(dut):
     while dut.uio_out[7] != 0:
         await FallingEdge(dut.clk)
 
-    dut._log.info("Sending Read Status Instruction")
-
-    instruction = 0x0FC0
-
-    for i in range(16):
-        dataOutput = dut.uio_out[3].value
-        if (instruction & (1 << (15-i))): # 1
-            assert dataOutput == 1, f"Expected bit {i} to be 1, got {dataOutput}"
-        else:  # 0
-            assert dataOutput == 0, f"Expected bit {i} to be 0, got {dataOutput}"
-        await FallingEdge(dut.clk)
-
-    dut._log.info("Read status instruction sent successfully, polling status")
-    
-    busy_time_clks = 1250 # 50us average wait time / 40ns per clk cycle
-    cycles_passed = 0
-    isDone = 0
-
-    dut.ui_in[4].value = 1
-
-    while (not isDone):
-        for i in range(8):
-            if (i == 7):
-                if (cycles_passed >= busy_time_clks):
-                    dut.ui_in[4].value = 0
-                    isDone = 1
-            cycles_passed += 1
-            await ClockCycles(dut.clk, 1)
-
-
-    dut._log.info("Awaiting CS falling edge")
-    while dut.uio_out[7] == 0:
-        await FallingEdge(dut.clk)
-    while dut.uio_out[7] == 1:
-        await FallingEdge(dut.clk)
-
     instruction = 0x6b
     dut._log.info("Sending QSPI Instruction")
 
