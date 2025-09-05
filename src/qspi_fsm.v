@@ -231,6 +231,9 @@ module qspi_fsm (
         end
     end
 
+    reg [7:0] posEdgeBuffer = 8'b0;
+    reg [7:0] negEdgeBuffer = 8'b0;
+
     // Read Instruction Buffer Logic, (Looks at current state not next state)
     always @(posedge clk) begin
         if (!rst_n) begin
@@ -238,6 +241,26 @@ module qspi_fsm (
         end else begin 
             if (cur_state == READ_DATA) begin 
                 instruction_buf <= {instruction_buf[19:0], spi_io};
+            end 
+        end
+    end
+
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            posEdgeBuffer <= 8'b0;
+        end else begin 
+            if (cur_state == READ_DATA) begin 
+                posEdgeBuffer <= {posEdgeBuffer[5:0], spi_io[2:1]};
+            end 
+        end
+    end
+
+    always @(negedge clk) begin
+        if (!rst_n) begin
+            negEdgeBuffer <= 8'b0;
+        end else begin 
+            if (cur_state == READ_DATA) begin 
+                negEdgeBuffer <= {negEdgeBuffer[5:0], spi_io[2:1]};
             end 
         end
     end
