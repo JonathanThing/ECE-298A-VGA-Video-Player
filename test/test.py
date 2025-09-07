@@ -9,17 +9,17 @@ import scripts.qspi_sim as qspi_sim
 
 def set_4bit_io(dut, value):
     dut.uio_in[3].value = (value >> 0) & 1  # IO_0
-    dut.ui_in[2].value  = (value >> 1) & 1  # IO_1
-    dut.ui_in[3].value  = (value >> 2) & 1  # IO_2
+    dut.ui_in[4].value  = (value >> 1) & 1  # IO_1
+    dut.ui_in[0].value  = (value >> 2) & 1  # IO_2
     dut.uio_in[6].value = (value >> 3) & 1  # IO_3
 
 def get_rgb(output_value):
-    # red is bits 2,1,0
-    # green is bits 5,4,3
-    # blue is bits 7,6
-    red = ((output_value & 0b100) >> 2) << 2 | ((output_value & 0b10) >> 1) << 1 | (output_value & 0b1)
-    green = ((output_value & 0b100000) >> 5) << 2 | ((output_value & 0b10000) >> 4) << 1 | ((output_value & 0b1000) >> 3)
-    blue = ((output_value & 0b10000000) >> 7) << 1 | ((output_value & 0b1000000) >> 6)
+    # red is bits 5,0,4
+    # green is bits 2,6,1
+    # blue is bits 3,7
+    red = ((output_value >> 5 & 1) << 2) | ((output_value & 1) << 1) | (output_value >> 4 & 1)
+    green = ((output_value >> 2 & 1) << 2) | ((output_value >> 6 & 1) << 1) | (output_value >> 1 & 1)
+    blue = ((output_value >> 3 & 1) << 1) | (output_value >> 7 & 1)
 
     return (red << 5) | (green << 2) | blue
 
@@ -27,7 +27,6 @@ def get_rgb(output_value):
 async def test_project(dut):
     dut._log.info("Start")
 
-    # Set the clock period to 10 us (100 KHz)
     clock = Clock(dut.clk, 40, units="ns")
     cocotb.start_soon(clock.start())
 
@@ -44,8 +43,30 @@ async def test_project(dut):
 
     dut._log.info("Test project behavior")
 
-    dut._log.info("Awaiting CS Low")
-    while dut.uio_out[2] != 0:
+    dut._log.info("Awaiting CS falling edge")
+    while dut.uio_out[7] != 0:
+        await FallingEdge(dut.clk)
+
+    instruction = 0x13
+    dut._log.info("Reseting page to start of Memory")
+
+    for i in range(8):
+        dataOutput = dut.uio_out[3].value
+        if (instruction & (1 << (7-i))): # 1
+            assert dataOutput == 1, f"Expected bit {i} to be 1, got {dataOutput}"
+        else:  # 0
+            assert dataOutput == 0, f"Expected bit {i} to be 0, got {dataOutput}"
+        await FallingEdge(dut.clk)
+
+    for i in range(24):
+        dataOutput = dut.uio_out[3].value
+        assert dataOutput == 0
+        await FallingEdge(dut.clk)
+
+    dut._log.info("Page reset instruction sent successfully")
+
+    dut._log.info("Awaiting CS falling edge")
+    while dut.uio_out[7] != 0:
         await FallingEdge(dut.clk)
 
     instruction = 0x6b
@@ -85,9 +106,11 @@ async def test_project(dut):
 
     leading_blank_count = 0
 
+    frame_counter = 1
+
     # we count up to 640 and then it is blanking, we halt output to file for 160 clocks
     current_blank_width = 1
-
+    
     # we count up to 480 and then it is blanking, we halt output to file for 45 rows
     current_blank_height = 1
     for nibble_index in range(total_nibbles):
@@ -97,7 +120,7 @@ async def test_project(dut):
 
         while True:
             await RisingEdge(dut.clk)
-            sclk_enabled = (dut.uio_out[4] == 1)
+            sclk_enabled = (dut.uio_out[2] == 1)
             await FallingEdge(dut.clk)
             
             # wait for the leading blank region to finish
@@ -112,9 +135,14 @@ async def test_project(dut):
                     current_blank_width = 1
                     # increment height count
                     current_blank_height += 1
+
+                    if (current_blank_height%100 == 0):
+                        dut._log.info(f"At height {current_blank_height}")
                 
                 if(current_blank_height == 526):
                     # reset height count
+                    dut._log.info(f"Frame {frame_counter} completed")
+                    frame_counter += 1
                     current_blank_height = 1
 
             else:
@@ -131,6 +159,7 @@ async def test_project(dut):
         # Provide next nibble of data
         set_4bit_io(dut, int(qspi_sim.clock_data()))
 
+    dut._log.info(f"Frame {frame_counter} completed")
     dut._log.info("All data from data.bin successfully streamed.")
     await FallingEdge(dut.clk)
     set_4bit_io(dut, 0)

@@ -1,3 +1,5 @@
+# Simulates the output of the QSPI flash memory 
+
 index = 0
 clocks = 0
 

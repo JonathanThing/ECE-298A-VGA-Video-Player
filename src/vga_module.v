@@ -9,7 +9,8 @@ module vga_module (
 
     output wire       hsync,      // Horizontal sync
     output wire       vsync,      // Vertical sync
-    output wire       pixel_req   // Request for next pixel
+    output wire       pixel_req,  // Request for next pixel
+    output wire       mixed_region  // Region where audio and colour can be buffered together
 );
 
     // VGA timing parameters for 640x480 @ 60Hz with 25MHz clock
@@ -55,7 +56,9 @@ module vga_module (
 
     // Pixel request: assert when in the display area
     assign pixel_req = h_display_area && v_display_area || v_edge_case || h_edge_case;
-    
+
+    assign mixed_region = (v_display_area && v_counter != 479) || v_counter == 524; // Region where audio and colour can be buffered together
+
     // Main VGA logic
     always @(posedge clk) begin
         if (!rst_n) begin

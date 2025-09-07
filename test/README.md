@@ -1,37 +1,24 @@
-# Sample testbench for a Tiny Tapeout project
+# Testbench for RLE Video PLayer
 
-This is a sample testbench for a Tiny Tapeout project. It uses [cocotb](https://docs.cocotb.org/en/stable/) to drive the DUT and check the outputs.
-See below to get started or for more information, check the [website](https://tinytapeout.com/hdl/testing/).
+Note: It is recommended to test only on small inputs (Only a few frames) to avoid long simulation times and large output files (such as `output.bin` and `tb.vcd`)
 
-## Setting up
+## Test Procedure
 
-1. Edit [Makefile](Makefile) and modify `PROJECT_SOURCES` to point to your Verilog files.
-2. Edit [tb.v](tb.v) and replace `tt_um_example` with your module name.
+Before running the simulation, make sure there is a valid `data.bin` file in the resources folder, this is the RLE video data that the testbench will use.
+
+RLE files can be generated with this tool:
+https://github.com/JonathanThing/ECE298A-RLE-Tool
+
+Once the test has been successfully completed, an `output.bin` file will be created in the resources folder that logs every pixel outputted by the player. The `vga_converter.py` script can be used to convert the output data so that it can be visually checked.
 
 ## How to run
-
-To run the RTL simulation:
 
 ```sh
 make -B
 ```
 
-To run gatelevel simulation, first harden your project and copy `../runs/wokwi/results/final/verilog/gl/{your_module_name}.v` to `gate_level_netlist.v`.
-
-Then run:
-
-```sh
-make -B GATES=yes
-```
-
 ## How to view the VCD file
 
-Using GTKWave
 ```sh
 gtkwave tb.vcd tb.gtkw
-```
-
-Using Surfer
-```sh
-surfer tb.vcd
 ```
