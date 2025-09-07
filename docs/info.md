@@ -1,73 +1,93 @@
 ## How it works
 
-Run length encoding (RLE) is used to compress the video data to reduce the memory usage improve the read speed of the player. It works by encoding consecutive horizontal pixels of the same colour into a single instruction, specifiying both the colour and also the length of the strip. For example, a sequence of red pixels like RRRRRRRRRRRR would be stored as 12R.
+The player recieves encoded video and audio data from an external flash memory, buffering it before decoding and outputting the corresponding pixel colours and audio signals to play the video.The player will continue playing the video before receiving a stop signal which will cause it to reset and restart the video.
 
-Because of the lack of space available on the chip, the player cannot use a frame buffer for the video output and must instead "race the beam" of the VGA scanline. As the player runs at the same clock frequncy as the VGA pixel clock (25.175MHz), it outputs a new pixel at every clock cycle when in the display window of the VGA protocol.
+## Structure
 
-The audio output uses 8-bit PWM with a carrier frequency of ~98.3kHz. Audio samples are updated at the end of every VGA scanline to avoid intefering with the video data, resulting in a sample rate of ~31.5kHz.
-
-
-
-
-## Rough Timing Diagrams
-
-### Boot sequence timing diagram
 <p align="center">
-  <img src="https://github.com/JonathanThing/VGA-Video-Player/blob/Verilog-Fixes/docs/imgs/Startup_Sequence.png?raw=true" alt="Diagram 2"/>
+  <img src="https://github.com/JonathanThing/VGA-Video-Player/blob/main/docs/imgs/Block_Diagram.png?raw=true" alt="Diagram 1"/>
 </p>
 
-### Regular operation QSPI timing diagram
-<p align="center">
-  <img src="https://github.com/JonathanThing/VGA-Video-Player/blob/Verilog-Fixes/docs/imgs/Instruction_Reading.png?raw=true" alt="Diagram 1"/>
-</p>
+Because of the lack of space available on the chip, the player cannot use a frame buffer for the video output and must instead "race the beam" of the VGA scanline. As the player runs at the same clock frequency as the VGA pixel clock (25.175MHz), it outputs a new pixel at every clock cycle when in the display window of the VGA protocol.
 
+The design utilizes Quad Serial Peripheral Interface (QSPI) to read data from the external memory, allowing 4-bits of data to be read at every clock cycle. With every RLE instruction being 24 bits, this means that it will take the player 6 clock cycles to read a single instruction. This means that without any buffering, each strip must be at least 6 pixels long to keep up with the scanline.
 
+To allow for more flexability, the data is buffered through 6 registers before being consumed by the player. This allows for pixel runs shorter than 6 pixels as long as the buffer is still filled with longer strips.  To prevent the buffer from emptying, every 6 consequtive pixel runs on the same row must add up to at least 36 pixels. This is because the 6 buffers will each require at least 6 clock cycles to be filled, requiring a total of atleast 36 pixels to guarentee that the buffer doesn't become empty.
 
-Outputs a 640x480 VGA video from external memory with Run Length Encoded (RLE) data using QSPI.
+## Run Length Encoding
 
+Run Length Encoding (RLE) is used to compress the video data to reduce the memory usage improve the read speed of the player. It works by encoding consecutive horizontal pixels of the same colour into a single instruction, specifying both the colour and also the length of the strip. For example, a sequence of red pixels like RRRRRRRRRRRR would be stored as 12R.
 
-RLE works by breaking an image down into strips of consequtive pixels, specifying the length and colour of the strip.
+**RLE Requirements**
 
-Each instruction is 3 bytes (18 bits of data + 6 bits of padding) and is stored in the form:
+- Every pixel run must be at least 3 pixels long (Because of FF logic delays in the design)
+- A pixel run cannot be more than 640 pixels long (The length of the VGA display row)
+- Every 6 consequtive pixel runs in the same row must sum to at least 36 pixels (So that buffer doesn't empty)
+
+### Instruction Format:
+
+All RLE instructions are 3 bytes (18 bits of data + 6 bits of padding). The padding is discarded once the instruction is transfered into the chip from the external memory.
+
+**Pixel Instruction:**
 
 | padding [23:18] | run_length [17:8] | colour [7:0] |
 |-----------------|-------------------|--------------|  
 
-The video player uses 8 bit colour (3 bits for Red, 3 bits for Green, 2 bits for Blue)
+The 8 bit colour is stored as:
 
 | red [7:5] | green [4:2] | blue [1:0] |
 |-----------|-------------|------------|
 
+Example: A 40 red pixel run would be `0x0028E0`
 
-Requirements for RLE Data:
-- One pixel run must be at least 3 pixels
-- For any given 6 consequtive pxiel runs, the number of pixels must sum up to 36
-- A valid pixel run should be at most 640 pixels
+**Audio Instruction:**
 
-The chip reads the data stored in the external flash memory using a continous sequential read command, where it expects to be able to continuously clock data sequentailly from 0 to the final memory address. 
+For audio samples, the run_length of the instruction is set to the max value of 0x3FF or 1023. Since pixel runs are at most 640 pixels, audio instructions will not conflict with pixel instructions. The 8-bit sample value is stored in the same place as the colour for pixel instruction.
 
-It takes the chip 6 clock cycles to read one instruction as it reads 4 bits at a time using QSPI.
-Since it runs at 25.175MHz, each clock cycle correlates to one pixel output for the VGA.
-Therefore, without a buffer, this would mean that every strip would have to be atleast 6 pixels long to keep up with the VGA.
+`0x03FF00 + sample`
 
-By using 6 buffers, we loosen the requirement to 36 pixels for every 6 runs, allowing for a few runs smaller than 6 without desyncing the video
+Example: An audio sample of value 127 would be `0x03FF7F`
 
-The mininum requirement of 3 pixels per run is because of limitations from the implementation.
+**Stop Instruction:**
 
-Commands:
-- An instruction 0x30000 is used as a stop instruction that will restart the video from the beginning. (The instruction has a run length of 768 which is longer than the width of the screen)
+The stop instruction is stored as `0x030000` which has a run length of 0x300 or 768 which does not conflict with the pixel instruction.
+
+## Audio
+
+The audio output uses 8-bit PWM with a carrier frequency of ~98.3kHz. The audio instructions use the same datapath as the pixel instructions, and so they are updated at the end of every VGA scanline in the blanking region to avoid interfering with the video data, resulting in a sample rate of ~31.5kHz. 
+
+## QSPI 
+
+We designed the project to use the W25N02KV Flash IC which has a large memory size but requires loading and using a page buffer to read the data. On startup, the player loads the start of the memory into the page buffer with the `13h` command. After waiting, it then uses the Quad read command `6Bh` in sequential read mode to allow the player to utilize QSPI to read out the entire memory with a single instruction. This startup should be compatible with other flash memory IC's that also have the `6Bh` command but do not use a page buffer, as long as the `13h` command is ignored by the IC.
 
 ## How to test
 
+Note: It is recommended to test only on small inputs (Only a few frames) to avoid long simulation times and large output files (such as `output.bin` and `tb.vcd`).
+
+Before running the simulation, make sure there is a valid `data.bin` file in the resources folder, this is the RLE video and audio data that will be tested.
+
+RLE files can be generated with this tool:
+https://github.com/JonathanThing/ECE298A-RLE-Tool
+
 Run the cocotb test script in the `test` folder using `make -B`. The timing test results will be shown in the console log.
 
-cd into the `scripts` folder and do `python vga_converter.py ../resources/output.bin`. Make note of the original image `resources/sample_test.png`. After running the script, you should get a new file
-`scripts/output.png`. Compare and verify the two images look the same.
+Once the test has been successfully completed, an `output.bin` file will be created in the resources folder that logs every pixel outputted by the player. The `vga_converter.py` script can be used to convert the output data so that it can be visually checked.
 
-For custom tests, you can put an image in the `test/scripts` folder (ensuring it is a 640x480 PNG image) and then run `python png_to_rle_converter.py`. This should give you a `data.bin` file which you can place in `test/resources`. Now you can cd to `test` and run `make -B`. You should see `output.bin` get created. cd to `scripts` and run `python vga_converter.py ../resources/output.bin`. You can see and compare the output image given in `output.png`. 
+## Pinout
 
-The test emulate what would be output on a screen using a VGA port. For example, we log to the file directly the colour of each pixel. Through our `test.py` script we read the `data.bin` file for the RLE data and decode it into each pixel on the screen. The `test.py` script will ignore any of the blanking regions (through a counter separate from the verilog files in the `test.py` file; allowing us to test correct blanking as well) so that we can get raw VGA data for one frame. This allows us to test the correctness of the output visually. 
+|#|Input|Output| Bidir|
+|--|---|----|-----|
+|0 |IO2|R[1]|VSYNC|
+|1 |   |G[0]|PWM  |
+|2 |   |G[2]|SCLK |
+|3 |   |B[1]|IO0  |
+|4 |IO1|R[0]|HSYNC|
+|5 |   |R[2]|     |
+|6 |   |G[1]|IO3  |
+|7 |   |B[0]|nCS  |
+
+Pinout is chosen to make the PCB design easier.
 
 ## External hardware
 
-The design will require a custom PCB to handle the 8-bit VGA output, PWM audio, and also the external memory.
+The design will require a custom PCB to handle the 8-bit VGA output, PWM audio, and also the external memory. (TODO)

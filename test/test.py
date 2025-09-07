@@ -106,9 +106,11 @@ async def test_project(dut):
 
     leading_blank_count = 0
 
+    frame_counter = 1
+
     # we count up to 640 and then it is blanking, we halt output to file for 160 clocks
     current_blank_width = 1
-
+    
     # we count up to 480 and then it is blanking, we halt output to file for 45 rows
     current_blank_height = 1
     for nibble_index in range(total_nibbles):
@@ -139,6 +141,8 @@ async def test_project(dut):
                 
                 if(current_blank_height == 526):
                     # reset height count
+                    dut._log.info(f"Frame {frame_counter} completed")
+                    frame_counter += 1
                     current_blank_height = 1
 
             else:
@@ -155,6 +159,7 @@ async def test_project(dut):
         # Provide next nibble of data
         set_4bit_io(dut, int(qspi_sim.clock_data()))
 
+    dut._log.info(f"Frame {frame_counter} completed")
     dut._log.info("All data from data.bin successfully streamed.")
     await FallingEdge(dut.clk)
     set_4bit_io(dut, 0)

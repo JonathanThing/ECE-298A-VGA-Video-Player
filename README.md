@@ -6,7 +6,7 @@
 
 ## Overview: VGA Video and Audio Player
 
-This project is a VGA video and audio player designed in Verilog and to be fabricated into an ASIC as a part of TinyTapeout SKY 25a. The player takes in encoded video and audio data from external flash memory, decodes and buffers it before outputting the corresponding video and audio signals.
+This project is a VGA video and audio player designed in Verilog and to be fabricated into an ASIC as a part of TinyTapeout SKY 25a. The player recieves encoded video and audio data from an external flash memory, buffering it before decoding and outputting the corresponding pixel colours and audio signals to play the video.
 
 ## Key Features:
 - 640x480p 60Hz VGA video output
@@ -17,5 +17,3 @@ This project is a VGA video and audio player designed in Verilog and to be fabri
 <p align="center">
   <img src="https://github.com/JonathanThing/VGA-Video-Player/blob/main/docs/imgs/Block_Diagram.png?raw=true" alt="Diagram 1"/>
 </p>
-
-
