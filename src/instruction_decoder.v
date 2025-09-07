@@ -1,7 +1,7 @@
 /*
  * Instruction Decoder Module
  * Decodes 18-bit RLE instruciton and outputs the RGB values for VGA display 
- * Format: [17:8] Run length (10 bits), [7:0] RGB color (RRRGGGBB)
+ * Format: [17:8] Run length (10 bits), [7:0] RGB colour (RRRGGGBB)
  */
 
 module instruction_decoder (

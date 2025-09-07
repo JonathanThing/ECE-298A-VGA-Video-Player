@@ -2,8 +2,8 @@
 """
 VGA RRRGGGBB to Image Converter
 
-Converts a VGA output file with 8-bit RRRGGGBB color format to PNG images.
-Color format: RRR GGG BB (3 bits red, 3 bits green, 2 bits blue)
+Converts a VGA output file with 8-bit RRRGGGBB colour format to PNG images.
+colour format: RRR GGG BB (3 bits red, 3 bits green, 2 bits blue)
 Resolution: 640x480
 """
 
@@ -20,7 +20,7 @@ def rrrgggbb_to_rgb(byte_value):
     - Bits 4-2: Green (3 bits) 
     - Bits 1-0: Blue (2 bits)
     """
-    # Extract color components using bit masks
+    # Extract colour components using bit masks
     red_3bit = (byte_value & 0b11100000) >> 5    # Extract bits 7-5
     green_3bit = (byte_value & 0b00011100) >> 2  # Extract bits 4-2
     blue_2bit = byte_value & 0b00000011          # Extract bits 1-0

@@ -1,11 +1,13 @@
-<!---
+## How it works
 
-This file is used to generate your project datasheet. Please fill in the information below and delete any unused
-sections.
+Run length encoding (RLE) is used to compress the video data to reduce the memory usage improve the read speed of the player. It works by encoding consecutive horizontal pixels of the same colour into a single instruction, specifiying both the colour and also the length of the strip. For example, a sequence of red pixels like RRRRRRRRRRRR would be stored as 12R.
 
-You can also include images in this folder and reference them in the markdown. Each image must be less than
-512 kb in size, and the combined size of all images must be less than 1 MB.
--->
+Because of the lack of space available on the chip, the player cannot use a frame buffer for the video output and must instead "race the beam" of the VGA scanline. As the player runs at the same clock frequncy as the VGA pixel clock (25.175MHz), it outputs a new pixel at every clock cycle when in the display window of the VGA protocol.
+
+The audio output uses 8-bit PWM with a carrier frequency of ~98.3kHz. Audio samples are updated at the end of every VGA scanline to avoid intefering with the video data, resulting in a sample rate of ~31.5kHz.
+
+
+
 
 ## Rough Timing Diagrams
 
@@ -18,14 +20,6 @@ You can also include images in this folder and reference them in the markdown. E
 <p align="center">
   <img src="https://github.com/JonathanThing/VGA-Video-Player/blob/Verilog-Fixes/docs/imgs/Instruction_Reading.png?raw=true" alt="Diagram 1"/>
 </p>
-
-## How it works
-
-Run length encoding (RLE) is used to compress the video data to reduce the memory usage improve the read speed of the player. It works by encoding consecutive horizontal pixels of the same colour into a single instruction, specifiying both the colour and also the length of the strip. For example, a sequence of red pixels like RRRRRRRRRRRR would be stored as 12R.
-
-Because of the lack of space available on the chip, the player cannot use a frame buffer for the video output and must instead "race the beam" of the VGA scanline. As the player runs at the same clock frequncy as the VGA pixel clock (25.175MHz), it outputs a new pixel at every clock cycle when in the display window of the VGA protocol.
-
-The audio output uses 8-bit PWM with a carrier frequency of ~98.3kHz. Audio samples are updated at the end of every VGA scanline to avoid intefering with the video data, resulting in a sample rate of ~31.5kHz.
 
 
 
@@ -76,4 +70,4 @@ The test emulate what would be output on a screen using a VGA port. For example,
 
 ## External hardware
 
-The design will require a custom PCB to handle 8-bit VGA output and also house the external memory
+The design will require a custom PCB to handle the 8-bit VGA output, PWM audio, and also the external memory.
