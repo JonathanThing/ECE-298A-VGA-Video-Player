@@ -1,12 +1,10 @@
 # Testbench for RLE Video PLayer
 
-This is a testbench for the Tiny Tapeout RLE Video Player. It uses [cocotb](https://docs.cocotb.org/en/stable/) to drive the DUT and check the outputs.
-
 Note: It is recommended to test only on small inputs (Only a few frames) to avoid long simulation times and large output files (such as `output.bin` and `tb.vcd`)
 
 ## Test Procedure
 
-Before running the simulation, make sure there is a valid `data.bin` file in the resources folder, this is the RLE video and audio data that the testbench will use.
+Before running the simulation, make sure there is a valid `data.bin` file in the resources folder, this is the RLE video data that the testbench will use.
 
 RLE files can be generated with this tool:
 https://github.com/JonathanThing/ECE298A-RLE-Tool

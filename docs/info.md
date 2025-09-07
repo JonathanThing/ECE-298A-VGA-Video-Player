@@ -20,15 +20,18 @@ Run Length Encoding (RLE) is used to compress the video data to reduce the memor
 
 **RLE Requirements**
 
-- Every pixel run must be at least 3 pixels long (Because of FF logic delays in the design)
+- Every pixel run must be at least 3 pixels long (Limitation of the design)
 - A pixel run cannot be more than 640 pixels long (The length of the VGA display row)
-- Every 6 consequtive pixel runs in the same row must sum to at least 36 pixels (So that buffer doesn't empty)
+- The sum of every 6 consequtive pixel runs in the same row must be atleast 36 pixels (So that buffer doesn't become empty)
 
 ### Instruction Format:
 
-All RLE instructions are 3 bytes (18 bits of data + 6 bits of padding). The padding is discarded once the instruction is transfered into the chip from the external memory.
+All RLE instructions are 3 bytes (18 bits of data + 6 bits of padding). 
+The padding is discarded once the instruction is transfered into the chip from the external memory.
 
 **Pixel Instruction:**
+
+The pixel instruction stores the colour of the pixel and the number of consequtive pixels in the run.
 
 | padding [23:18] | run_length [17:8] | colour [7:0] |
 |-----------------|-------------------|--------------|  
@@ -42,27 +45,25 @@ Example: A 40 red pixel run would be `0x0028E0`
 
 **Audio Instruction:**
 
-For audio samples, the run_length of the instruction is set to the max value of 0x3FF or 1023. Since pixel runs are at most 640 pixels, audio instructions will not conflict with pixel instructions. The 8-bit sample value is stored in the same place as the colour for pixel instruction.
-
-`0x03FF00 + sample`
+For audio samples, the run_length of the instruction is set to the max value of 0x3FF or 1023. Since pixel runs are at most 640 pixels, the audio instructions will not conflict with pixel instructions. Instead of storing colour, the audio instruction stores an 8-bit sample value in the form: `0x03FF00 + sample`
 
 Example: An audio sample of value 127 would be `0x03FF7F`
 
 **Stop Instruction:**
 
-The stop instruction is stored as `0x030000` which has a run length of 0x300 or 768 which does not conflict with the pixel instruction.
+The stop instruction is stored as `0x030000` which has a run length of 0x300 or 768 which does not conflict with the pixel instructions.
 
 ## Audio
 
-The audio output uses 8-bit PWM with a carrier frequency of ~98.3kHz. The audio instructions use the same datapath as the pixel instructions, and so they are updated at the end of every VGA scanline in the blanking region to avoid interfering with the video data, resulting in a sample rate of ~31.5kHz. 
+The audio output uses 8-bit PWM with a carrier frequency of ~98.3kHz and a sample rate of ~31.5kHz. The audio instructions use the same datapath as the pixel instructions, and so they are updated at the end of every VGA scanline in the blanking region to avoid interfering with the video data. 
 
 ## QSPI 
 
-We designed the project to use the W25N02KV Flash IC which has a large memory size but requires loading and using a page buffer to read the data. On startup, the player loads the start of the memory into the page buffer with the `13h` command. After waiting, it then uses the Quad read command `6Bh` in sequential read mode to allow the player to utilize QSPI to read out the entire memory with a single instruction. This startup should be compatible with other flash memory IC's that also have the `6Bh` command but do not use a page buffer, as long as the `13h` command is ignored by the IC.
+We designed the project to use the W25N02KV Flash IC which has a large memory size but requires loading a page buffer to be able to read the data. On startup, the player loads the beginning of the memory into the page buffer with the `13h` command. After waiting for ~300us, it then uses the quad read command `6Bh` in sequential read mode to allow the player to utilize QSPI and read out the entire memory with only a single instruction. This startup should be compatible with other flash memory IC's that also have the `6Bh` command but do not use a page buffer, as long as the `13h` command is ignored by the IC.
 
 ## How to test
 
-Note: It is recommended to test only on small inputs (Only a few frames) to avoid long simulation times and large output files (such as `output.bin` and `tb.vcd`).
+Note: It is recommended to test only on small inputs (only a few frames) to avoid long simulation times and large output files (such as `output.bin` and `tb.vcd`).
 
 Before running the simulation, make sure there is a valid `data.bin` file in the resources folder, this is the RLE video and audio data that will be tested.
 
@@ -86,7 +87,7 @@ Once the test has been successfully completed, an `output.bin` file will be crea
 |6 |   |G[1]|IO3  |
 |7 |   |B[0]|nCS  |
 
-Pinout is chosen to make the PCB design easier.
+The pinout was chosen to make the PCB design easier.
 
 ## External hardware
 
