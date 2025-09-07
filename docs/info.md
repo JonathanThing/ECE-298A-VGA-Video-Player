@@ -1,6 +1,6 @@
 ## How it works
 
-The player recieves encoded video and audio data from an external flash memory, buffering it before decoding and outputting the corresponding pixel colours and audio signals to play the video.The player will continue playing the video before receiving a stop signal which will cause it to reset and restart the video.
+The player reads in encoded video and audio data from an external flash memory, buffering it before decoding and outputting the corresponding pixel colours and audio signals to play the video. The player will continue playing the video before receiving a stop signal which will cause it to reset and restart the video.
 
 ## Structure
 
@@ -12,7 +12,7 @@ Because of the lack of space available on the chip, the player cannot use a fram
 
 The design utilizes Quad Serial Peripheral Interface (QSPI) to read data from the external memory, allowing 4-bits of data to be read at every clock cycle. With every RLE instruction being 24 bits, this means that it will take the player 6 clock cycles to read a single instruction. This means that without any buffering, each strip must be at least 6 pixels long to keep up with the scanline.
 
-To allow for more flexability, the data is buffered through 6 registers before being consumed by the player. This allows for pixel runs shorter than 6 pixels as long as the buffer is still filled with longer strips.  To prevent the buffer from emptying, every 6 consequtive pixel runs on the same row must add up to at least 36 pixels. This is because the 6 buffers will each require at least 6 clock cycles to be filled, requiring a total of atleast 36 pixels to guarentee that the buffer doesn't become empty.
+To allow for more flexibility, the data is buffered through 6 registers before being consumed by the player. This allows for pixel runs shorter than 6 pixels as long as the buffer is still filled with longer strips.  To prevent the buffer from emptying, every 6 consecutive pixel runs on the same row must add up to at least 36 pixels. This is because the 6 buffers will each require at least 6 clock cycles to be filled, requiring a total of at least 36 pixels to guarantee that the buffer doesn't become empty.
 
 ## Run Length Encoding
 
@@ -22,16 +22,16 @@ Run Length Encoding (RLE) is used to compress the video data to reduce the memor
 
 - Every pixel run must be at least 3 pixels long (Limitation of the design)
 - A pixel run cannot be more than 640 pixels long (The length of the VGA display row)
-- The sum of every 6 consequtive pixel runs in the same row must be atleast 36 pixels (So that buffer doesn't become empty)
+- The sum of every 6 consecutive pixel runs in the same row must be at least 36 pixels (So that buffer doesn't become empty)
 
 ### Instruction Format:
 
 All RLE instructions are 3 bytes (18 bits of data + 6 bits of padding). 
-The padding is discarded once the instruction is transfered into the chip from the external memory.
+The padding is discarded once the instruction is transferred into the chip from the external memory.
 
 **Pixel Instruction:**
 
-The pixel instruction stores the colour of the pixel and the number of consequtive pixels in the run.
+The pixel instruction stores the colour of the pixel and the number of consecutive pixels in the run.
 
 | padding [23:18] | run_length [17:8] | colour [7:0] |
 |-----------------|-------------------|--------------|  
@@ -87,8 +87,6 @@ Once the test has been successfully completed, an `output.bin` file will be crea
 |6 |   |G[1]|IO3  |
 |7 |   |B[0]|nCS  |
 
-The pinout was chosen to make the PCB design easier.
-
 ## External hardware
 
-The design will require a custom PCB to handle the 8-bit VGA output, PWM audio, and also the external memory. (TODO)
+The design will require a custom PCB to handle the 8-bit VGA output, PWM audio, and also the external memory.
